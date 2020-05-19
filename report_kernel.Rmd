@@ -1,0 +1,804 @@
+---
+title: "Correlation and Association"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, comment='', message = FALSE, error = TRUE, warning=FALSE, fig.width=8)
+```
+
+
+```{r}
+# Get data
+df <- params$data
+df <- df[,params$vars1,drop=FALSE]
+df2 <- df
+```
+
+```{r}
+# Call used libraries 
+library(MASS) # boxtest
+library(boot) # boot
+library(car) # outlierTest, plots
+library(knitr)
+library(nortest) # ad.test
+library(lmtest) # dwtest, bgtest
+library(DescTools) # SpearmanRho
+library(testforDEP) # MIC
+library(energy) # dcorr
+library(DDoutlier) # Outliers by kNN
+
+tryCatch({
+
+# Drop columns if all observations are missing 
+col_names_missing <- sapply(df, function(col) all(is.na(col)))
+df[ ,col_names_missing] <- list(NULL)
+
+# Drop empty rows
+rowsums <- data.frame(sapply(df,is.na))
+if (length(which(rowSums(rowsums) == dim(df)[2])) != 0L){
+  rows_drop <- (which(rowSums(rowsums) == dim(df)[2]))
+  length_non_complete <- length(which(rowSums(rowsums) == dim(df)[2]))
+  df <- df[-rows_drop, ,drop=FALSE]
+}
+
+# Drop character variables with more than 10 categories, NAs included 
+# cols_catlarge <- sapply(df, function(col) is.character(col) & length(unique(col)) >10)
+# df[,cols_catlarge] <- list(NULL)
+
+# Convert logical variables to character
+cols_logical <- sapply(df, function(col) is.logical(col))
+df[ ,cols_logical] <- sapply(df[ ,cols_logical], as.character)
+
+# Convert numerical variables with less than 4 unique values to character (omit NAs)
+col_names_numeric <- sapply(df, function(col) length(unique(na.omit(col))) < 4L & is.numeric(col))
+df[ ,col_names_numeric] <- sapply(df[ ,col_names_numeric], as.character)
+
+# Extract numerical variables    
+df_num <- df[which(sapply(df, is.numeric) == 1L)]
+
+# Reorder numerical variables alphabetically 
+df_num <- df_num[,order(colnames(df_num)),drop=FALSE]
+
+}, error=function(e) {
+  
+  stop(safeError("Outputs cannot be generated. Please check your data for consistency or try other upload options."))
+}
+
+)
+
+```
+
+
+# Basic Information
+
+\small
+Automatic statistics for the file:
+```{r, results="asis"}
+# Basic information
+dataname <- params$filename[1]
+kable(dataname, col.names = "File")
+```
+
+Observations (rows with at least one non-missing value): 
+```{r, results="asis"}
+# Basic information
+cat(dim(df)[1])
+```
+
+Variables (columns with at least one non-missing value): 
+```{r, results="asis"}
+# Basic information
+cat(dim(df)[2])
+```
+
+Variables treated as numeric and continuous: 
+```{r, results="asis"}
+if (exists("df_num")){
+  if (ncol(df_num)>0){
+    rateunique_df <- sapply(df_num, function(col) (length(unique(col)) / nrow(df_num)) >= cutoffcont(nrow(df_num)))
+    cat(sum(rateunique_df), fill=TRUE)
+  } else {cat("0",fill=TRUE)}
+}
+```
+
+```{r, results="asis"}
+if (exists("col_names_missing")){
+  if (sum(col_names_missing) != 0L){
+    cat("\n\n\\small Number of columns that are dropped because they contain no values (all values are missing):", sum(col_names_missing))
+  } 
+}
+```
+
+```{r, results="asis"}
+if (exists("length_non_complete")){
+  cat("\n\n\\small Number of rows that are dropped because they contain no values (all values are missing):", length_non_complete)
+}
+```
+
+```{r, results="asis", eval=FALSE}
+if (exists("cols_catlarge")){
+  if (sum(cols_catlarge) != 0L){
+    cat("\n\n\\small Character columns with more than 10 unique values which are not evaluated in this app:") 
+    cols <- names(which(cols_catlarge==1))
+    kable(cols, col.names = "Column Names")
+  }
+}
+```
+
+```{r, results="asis"}
+# Missings more than 50%
+complete_rate <- sapply(df, function(col) 1-(sum(is.na(col)) / dim(df)[1])) 
+if (length(which(complete_rate < 0.5)) != 0L){
+  cat("**Warning: These variables have more than 50% missing values:**")
+  miss_var <- names(which(complete_rate < 0.5)) 
+  kable(miss_var, col.names = "Variable")
+}
+```
+
+```{r, results="asis"}
+# Numeric falsly to char? 
+check_reading <- function(col){
+  numeric <- !is.na(as.numeric(col))
+  return(sum(numeric)/sum(!is.na(col)))
+}
+
+df3 <- df2
+col_names_missing <- sapply(df3, function(col) all(is.na(col)))
+df3[ ,col_names_missing] <- list(NULL)
+df_char <- df[which(sapply(df3, is.character) == 1L)]
+numeric_percent <- sapply(df_char, function(col) check_reading(col))
+
+if (length(numeric_percent[(numeric_percent>0.9)]) != 0L){
+  cat("**Warning: More than 90% of the values of these columns could be treated as numeric. Nevertheless, because of some values or the selected decimal character, the columns must be treated as discrete. Are all the values plausible? Please check your data once more before uploading! Column(s):**", names(numeric_percent[(numeric_percent>0.9)]),fill=TRUE)
+}
+```
+
+
+```{r, results="asis"}
+# Title 
+tryCatch({
+  
+  if (!exists("df_num") || ncol(df_num)==0L){
+    cat("**Warning: No pairs of continuous variables available. No output generated.**", fill=TRUE)
+  }
+  
+  }, error=function(e) {cat("")}
+
+)
+
+tryCatch({
+  
+  if (sum(rateunique_df) < 2L || nrow(df_num)<5L){
+    cat("**Warning: No pairs of continuous variables available or sample size smaller than 5. No output generated.**", fill=TRUE)
+  }
+  
+}, error=function(e) {cat("")}
+
+)
+
+```
+
+\pagebreak
+
+```{r, results="asis"}
+# Title 
+tryCatch({
+  
+  if (sum(rateunique_df) >= 2L & nrow(df_num)>=5){
+    cat("\n# Results for continuous vs continuous pairs", fill=TRUE)
+    cat("Columns ordered alphabetically", fill=TRUE)
+    output_num <- TRUE
+  }}, error=function(e) {cat("")}
+
+)
+
+```
+
+```{r, results="asis", dev="cairo_pdf"}
+
+options(na.action=na.omit)
+
+if (exists("df_num")){
+  
+  if (ncol(df_num)>0L & nrow(df_num)>=5){
+  
+    if (sum(rateunique_df) >= 2L){
+    
+    combs = combn(c(1:(ncol(df_num))),2)
+    
+    # Initialize refs as FALSE
+    count_lin <- 0
+    count_interpretp <- 0
+    trace(linearity,tracer=function() {count_lin <<- count_lin + 1},print=FALSE)
+    trace(interpret_p,tracer=function() {count_interpretp <<- count_interpretp + 1},print=FALSE)
+      
+    for (s in 1:16){
+          name2 <- paste("refs",s,sep="")
+          assign(name2,FALSE)
+    }
+    
+    # Analysis for each pair 
+    for (i in 1:ncol(combs)){
+    
+      j = combs[1,i]
+      k = combs[2,i]
+      
+       # Initialize outputs as FALSE
+      for (s in 1:16){
+          name <- paste("output",s,sep="")
+          assign(name,FALSE)
+      }
+      
+
+      # Define rate of unique values to control continuity 
+      rateunique1 <- length(unique(df_num[,j])) / nrow(df_num)
+      rateunique2 <- length(unique(df_num[,k])) / nrow(df_num)
+      
+      
+      # Consider bivariate continuous 
+        if (rateunique1 >= cutoffcont(nrow(df_num)) & rateunique2 >= cutoffcont(nrow(df_num))){
+          
+          
+          title <- cbind(colnames(df_num)[k], "vs", colnames(df_num)[j])
+          
+          cat("\n## Column Numbers:",j,"and",k, fill=TRUE)
+          
+          print(kable(colnames(df_num)[c(j,k)],col.names="Column Names"))
+      
+
+          tryCatch({
+            # Define check function for Pearson
+            check <- linearity(df_num[,j],df_num[,k])
+          }, error=function(e){cat("Error. This data pair cannot be analyzed. ", fill=TRUE)})     
+          
+          
+          tryCatch({
+            # Define check function for Spearman & Kendall 
+            checkm <- linearity(rank(df_num[,j]),rank(df_num[,k]))
+          }, error=function(e){cat("Error. This data pair cannot be analyzed. ", fill=TRUE)})    
+          
+          
+          tryCatch({
+            pcorrelation <- cor(df_num[,j],df_num[,k], use="complete.obs", method="pearson")
+          }, error=function(e){cat("")})    
+          
+          
+          
+          tryCatch({
+           spcorrelation <- cor(df_num[,j],df_num[,k], use="complete.obs", method="spearman")
+          }, error=function(e){cat("")})   
+          
+          
+          tryCatch({
+           ken <- cor(df_num[,j],df_num[,k], use="complete.obs", method="kendall")
+          }, error=function(e){cat("")}) 
+          
+
+          tryCatch({  
+            if (check==TRUE) {
+              output1 <- TRUE
+              refs1 <- TRUE
+              cat("If there is a relationship between the variables, then the Statsomat app assumes that it is linear. Therefore, the dependence between the variables is quantified by the Pearson correlation coefficient which is estimated to be:",round(pcorrelation,4),".", fill=TRUE)
+            }
+          }, error=function(e){cat("")}) 
+          
+          
+          tryCatch({  
+            if (check==TRUE & normality(df_num[,j],df_num[,k])==TRUE) {
+              # Inverse Fisher CI
+              fisherci <- cor.test(df_num[,j],df_num[,k], method="pearson")
+              output2 <- TRUE
+              refs2 <- TRUE
+              cat("The Statsomat app assumes no great departure from the normal distribution. Therefore, it computes an asymptotic 95% confidence interval for the Pearson correlation coefficient, based on the Fisher's Z transform: (", round(fisherci$conf.int[1],4),round(fisherci$conf.int[2],4), ").", fill=TRUE)
+                
+              if (fisherci$p.value <=0.05) {
+                cat("The statistical test of a zero Pearson correlation coefficient leads to a p-value of:", pformat(fisherci$p.value), ". Therefore, the Pearson correlation coefficient is statistically significant different from 0 at a type I error rate of 5%. ", fill=TRUE)
+              }
+                
+              if (fisherci$p.value >0.05)  {
+                cat("The statistical test of a zero Pearson correlation coefficient leads to a p-value of:", pformat(fisherci$p.value), ". Therefore, the Pearson correlation coefficient is not statistically significant different from 0 at a type I error rate of 5%.", fill=TRUE)
+              }
+                
+              interpret_p(pcorrelation,fisherci$p.value)
+                
+            }
+          }, error=function(e){cat("")}) 
+          
+          
+          
+          tryCatch({  
+            if (check==TRUE & normality(df_num[,j],df_num[,k])==FALSE & nrow(df_num) < 800) {
+              # Bootstrap CI
+              output3 <- TRUE
+              refs3 <- TRUE
+              temp <- data.frame(df_num[,j],df_num[,k])
+              bootdata <- boot(temp, statistic=pearsoncorr, R=1000)
+              if (length(unique(round(bootdata$t,2)))>1){
+                bootresult <- boot.ci(bootdata, type="bca")
+              }
+              cat("The Statsomat app assumes that the data is not normally distributed. Therefore, it computes a 95% confidence interval for the Pearson correlation coefficient based on bootstrapping: (",
+                  round(bootresult$bca[4],4),round(bootresult$bca[5],4),").", fill=TRUE)
+              
+              if (0<round(bootresult$bca[4],4) || round(bootresult$bca[5],4)<0) {
+                cat("Considering the bootstrap confidence interval, the Pearson correlation coefficient is statistically significant different from 0, with a type I error rate of 5%.", fill=TRUE)
+                pval = 0L
+                } 
+                
+              if (round(bootresult$bca[4],4) <=0 & 0<= round(bootresult$bca[5],4)) {
+                cat("Considering the bootstrap confidence interval, the Pearson correlation coefficient is not statistically significant different from 0, with a type I error rate of 5%.", fill=TRUE)
+                pval = 1L 
+                }
+              
+              interpret_p(pcorrelation, pval)
+              
+              if (bootresult$bca[2] <= 10 || bootresult$bca[3] >= 991) {
+                cat("Warning: The number of bootstrap replicates used by the Statsomat app is probably too small for this data case. The bootstrap confidence interval may be unstable.", fill=TRUE)
+                cat("\\newline",fill=TRUE)
+              }
+              
+              if ((nrow(df_num) < 8)) {
+                cat("Warning: The data sample size may be too small for a reliable bootstrap confidence interval.", fill=TRUE)
+                cat("\\newline",fill=TRUE)
+                check_nbci <- TRUE
+              }
+            }
+          }, error=function(e){cat("")}) 
+          
+
+          
+          tryCatch({  
+            if (check==TRUE & normality(df_num[,j],df_num[,k])==FALSE){
+              output4 <- TRUE
+              refs4 <- TRUE
+              cat("The Statsomat app assumes that the data is not normally distributed. Therefore, it evaluates the association between the variables also by using the Spearman rank correlation coefficient which is estimated to be:",round(spcorrelation,4),". ", fill=TRUE)
+            }
+          }, error=function(e){cat("")}) 
+          
+          
+          tryCatch({  
+            if (check==FALSE & checkm==TRUE) {
+              output5 <- TRUE
+              refs5 <- TRUE
+              cat("If there is a relationship between the variables, then the Statsomat app assumes that it is best described by a monotonic but not necessarily linear function. In this case the Pearson correlation coefficient may not be the optimal measure of dependency. The association between the variables is evaluated by the Spearman rank correlation coefficient, which is estimated to be: ",round(spcorrelation,4),". ")
+            }
+          }, error=function(e){cat("")}) 
+          
+          
+          tryCatch({ 
+          if ((check==TRUE & normality(df_num[,j],df_num[,k])==FALSE) || (check==FALSE & checkm==TRUE)) {
+               # Spearman CI
+              output6 <- TRUE
+              refs6 <- TRUE
+              spearmanci <- SpearmanRho(df_num[,j],df_num[,k], use="complete.obs", conf.level=0.95)
+              spearmanci2 <- cor.test(df_num[,j],df_num[,k], method="spearman", exact=TRUE)
+              
+              if (exists("spearmanci")){
+                cat("An asymptotic 95% confidence interval for the Spearman rank correlation coefficient based on the Fisher's Z transform is: (", round(spearmanci[2],4),round(spearmanci[3],4), ").", fill=TRUE)
+              }
+              
+              if (exists("spearmanci2")){
+                
+                if (spearmanci2$p.value <=0.05) {cat("The statistical test of a zero Spearman rank correlation coefficient leads to a p-value of:", pformat(spearmanci2$p.value), ". Therefore, the Spearman rank correlation coefficient is statistically significant different from 0 with a type I error rate of 5%. ", fill=TRUE)}
+                
+                if (spearmanci2$p.value >0.05)  {cat("The statistical test of a zero Spearman rank correlation coefficient leads to a p-value of:", pformat(spearmanci2$p.value), ". Therefore, the Spearman rank correlation coefficient is not statistically significant different from 0 with a type I error rate of 5%. ", fill=TRUE)}
+                
+                interpret_sp(spcorrelation,spearmanci2$p.value)
+                
+              }
+            }
+          }, error=function(e){cat("")}) 
+          
+          
+          tryCatch({  
+            if ((check==TRUE & normality(df_num[,j],df_num[,k])==FALSE) || (check==FALSE & checkm==TRUE)) {
+              output7 <- TRUE
+              refs7 <- TRUE
+              cat("The association between the variables is evaluated also by using the Kendall's tau rank correlation coefficient.", fill=TRUE)
+              cat("The Kendall's tau rank correlation coefficient is:",round(ken,4),".", fill=TRUE)
+            }
+          }, error=function(e){cat("")}) 
+          
+          
+          
+          tryCatch({ 
+            if ((check==TRUE & normality(df_num[,j],df_num[,k])==FALSE) || (check==FALSE & checkm==TRUE)) {
+              
+              # Kendalls Tau if monotonic
+              kentest <- cor.test(df_num[,j],df_num[,k], method="kendall")
+              
+                if (exists("kentest")){
+                  
+                   output8 <- TRUE
+                   refs8 <- TRUE
+                  if (kentest$p.value <=0.05) {cat("The statistical test of a zero Kendall's tau rank correlation coefficient leads to a p-value of:", pformat(kentest$p.value), ". Therefore, the Kendall's tau rank correlation is statistically significant different from 0 with a type I error rate of 5%. ", fill=TRUE)}
+                  
+                  if (kentest$p.value >0.05)  {cat("The statistical test of a zero Kendall's tau rank correlation coefficient leads to a p-value of:", pformat(kentest$p.value), ". Therefore, the Kendall's tau rank correlation coefficient is not statistically significant different from 0 with a type I error rate of 5%. ", fill=TRUE)}
+                   
+                  interpret_ken(ken,kentest$p.value)
+
+                }
+
+              }
+              
+            }, error=function(e){cat("")}) 
+          
+          
+          tryCatch({ 
+            
+            if (check==FALSE & checkm==FALSE){
+              
+              cat("The Statsomat app cannot decide for an acceptable linear or monotonic relationship between the variables. In this case, classical coefficients of correlation (e.g. Pearson, Spearman or Kendall's Tau) and corresponding parametrical statistical tests could be misleading. ", fill=TRUE) 
+              output9 <- TRUE
+              refs9 <- TRUE  
+              # MIC
+              tryCatch({ 
+                if (nrow(df_num) <= 100){
+                  mic <- testforDEP(df_num[,j],df_num[,k], test="MIC", rm.na=TRUE, p.opt="MC")
+                } else {mic <- testforDEP(df_num[,j],df_num[,k], test="MIC", rm.na=TRUE, p.opt="table")}
+  
+                micval <- minerva::mine(df_num[,j],df_num[,k], na.rm=TRUE)$MIC
+                
+                cat("The Statosmat app uses another measure(s) to quantify the dependence between the variables. ", fill=TRUE)
+                cat("\\newline",fill=TRUE)
+  
+                if (mic@p_value > 0.05){ 
+                  cat("The Maximal Information Coefficient (MIC) between the variables is ",round(micval,3), fill=TRUE)     
+                  cat(". The statistical test of a zero MIC leads to a p-value of: ",pformat(mic@p_value), ". Therefore, the MIC is not statistically significant from 0 at a type I error rate of 5%. By using the MIC measure, we cannot identify a dependence between the variables. ", fill=TRUE)
+                  cat("\\newline",fill=TRUE)
+                  cat("Background: The Maximal Information Coefficient is related to the relationship strenght and it can be interpreted as a correlation measure. It is symmetric and it ranges in [0,1], where it tends to 0 for statistically independent data and it approaches 1 in probability for noiseless functional relationships. ", fill=TRUE)
+                  cat("\\newline",fill=TRUE)
+                }
+                if (mic@p_value <= 0.05){ 
+                  cat("The Maximum Information Coefficient (MIC) between the variables is ",round(micval,3), fill=TRUE)     
+                  cat(". The statistical test of a zero MIC leads to a p-value of: ",pformat(mic@p_value), ". Therefore, the MIC is statistically significant from 0 at a type I error rate of 5%. There exists a statistically significant dependence between the variables, described by a functional relationship. ", fill=TRUE)
+                  cat(round(micval*100,2), "% of one of the pair variables can be explained by the other variable. ", fill=TRUE)
+                  if (round(micval,3)<0.1){
+                    cat("Nevertheless, the size of the MIC is very small and may have no practical importance. ", fill=TRUE)
+                  }
+                  cat("\\newline",fill=TRUE)
+                  cat("Background: The Maximal Information Coefficient is related to the relationship strenght and it can be interpreted as a correlation measure. It is symmetric and it ranges in [0,1], where it tends to 0 for statistically independent data and it approaches 1 in probability for noiseless functional relationships. ", fill=TRUE)
+                  cat("\\newline",fill=TRUE)
+                }
+                 output10 <- TRUE
+                 refs10 <- TRUE
+              }, error=function(e){cat("")}) 
+              
+              
+              # Distance correlation
+              tryCatch({ 
+                
+                 temp <- data.frame(df_num[,j],df_num[,k])
+                 temp2 <- temp[complete.cases(temp),]
+                 dist <- dcor.test(temp2[,1],temp2[,2], R=100)
+                 
+                if (dist$p.value > 0.05){ 
+                  cat("The distance correlation between the variables is ",round(dist$statistic,3),".", fill=TRUE)     
+                  cat("The statistical test of a zero distance correlation leads to a p-value of: ",round(dist$p.value,3),". Therefore, the distance correlation is not statistically significant from 0 at a type I error rate of 5%. By using the distance correlation measure, the Statsomat app cannot identify a dependence between the variables. ", fill=TRUE)
+                  cat("\\newline",fill=TRUE)
+                  cat("Background: The distance correlation is a measure of dependence between random vectors. It ranges in [0,1], where it tends to 0 for statistically independent data. ", fill=TRUE)
+                  cat("\\newline",fill=TRUE)
+                }
+                if (dist$p.value <= 0.05){ 
+                  cat("The distance correlation between the variables is ",round(dist$statistic,3),".", fill=TRUE)     
+                  cat("The statistical test of a zero distance correlation leads to a p-value of: ",round(dist$p.value,3), ". Therefore, the distance correlation is statistically significant from 0 at a type I error rate of 5%. By using this measure, the Statsomat app identifies a statistically significant dependence between the variables. ", fill=TRUE)
+                  if (round(dist$statistic,3)<0.1){
+                    cat("Nevertheless, the size of the distance correlation is very small and may have no practical importance. ", fill=TRUE)
+                  }
+                  cat("\\newline",fill=TRUE)
+                   cat("Background: The distance correlation is a measure of dependence between random vectors. It ranges in [0,1], where it tends to 0 for statistically independent data. ", fill=TRUE)
+                  cat("\\newline",fill=TRUE)
+                }
+               output11 <- TRUE
+               refs11 <- TRUE
+              }, error=function(e){cat("")}) 
+              
+            }
+
+          }, error=function(e){cat("")}) 
+          
+          
+          
+          
+          
+          
+          
+          #######
+          # Notes
+          #######
+          
+        tryCatch({     
+          
+          if ((check==TRUE & normality(df_num[,j],df_num[,k])==FALSE & kentest$p.value <= 0.1) || (check==FALSE & checkm==TRUE & kentest$p.value <= 0.1)) {
+            
+            if (min(length(unique(df_num[,j])), length(unique(df_num[,k]))) < nrow(df_num)){
+          
+              cat("Note: Since there exist ties in the data, the p-values for the Spearman and Kendall's tau hypothesis tests are only approximate. Moreover, in this case the Statsomat app prefers the Kendall's tau to the Spearman hypothesis test. ", fill=TRUE)
+              cat("\\newline",fill=TRUE)
+            }
+            if ((nrow(df_num) < 800 & kentest$p.value <= 0.1 & spearmanci2$p.value>0.1) || (nrow(df_num) < 800 & kentest$p.value > 0.1 & spearmanci2$p.value<=0.1)){
+              cat("Note: For this sample size, the Statsomat app prefers the Kendall's tau to the Spearman hypothesis test. ", fill=TRUE)
+              cat("\\newline",fill=TRUE)
+            }
+          }
+        }, error=function(e){cat("")}) 
+          
+          
+          
+          
+          
+          
+          
+          #########
+          # Warnings
+          #########
+          tryCatch({      
+            # Bivariate outliers check and warning 
+            # Outlier if Bonferroni p < 0.01
+            if (check==TRUE) {
+              
+              if (normality2(residuals(lm(df_num[,k] ~ df_num[,j])))==TRUE){
+                outliers <- outlierTest(lm(df_num[,k] ~ df_num[,j]))
+                outliers_sign <- outliers$bonf.p[outliers$bonf.p<0.01]
+              }
+              
+              if (normality2(residuals(lm(df_num[,j] ~ df_num[,k])))==TRUE){
+                outliers2 <- outlierTest(lm(df_num[,j] ~ df_num[,k]))
+                outliers_sign2 <- outliers2$bonf.p[outliers2$bonf.p<0.01]
+              }
+              
+              if (length(outliers_sign) > 0L || length(outliers_sign2) > 0L) {
+                 cat("Warning: The Statsomat app detected possible outliers for this variable pair. Outliers may have a negative effect on the reported results related to the Pearson correlation coefficient. Please check your data before uploading to Statsomat or contact the classical statistical consultancy at support@statsomat.com.", fill=TRUE)
+                cat("\\newline",fill=TRUE)
+                output12 <- TRUE
+                refs12 <- TRUE
+              }
+            }
+          }, error=function(e){cat("")}) 
+  
+          
+          
+          
+           tryCatch({ 
+            if (check==TRUE & output12==FALSE){
+              if (knnoutlier(df_num[,j],df_num[,k])==TRUE || knnoutlier(df_num[,k],df_num[,j])==TRUE){
+                cat("Warning: The Statsomat app detected possible outliers for this variable pair. Outliers may have a negative effect on the reported results related to the Pearson correlation coefficient. Please check your data before uploading to Statsomat or contact the classical statistical consultancy at support@statsomat.com.", fill=TRUE)
+                cat("\\newline",fill=TRUE)
+              }
+             }
+          }, error=function(e){cat("")}) 
+          
+          
+
+          
+           tryCatch({ 
+             
+            if (check==TRUE) {
+            # Breusch-Godfrey test, autocorrelation existent if check is false
+             if (autocorr(df_num[,j],df_num[,k])==FALSE){
+               cat("Warning: We assume that the observations are independent and identically distributed. But a preliminary statistical test of serial correlation indicates that the observations may be not independent. Sometimes, this can be caused by a missing covariate. Other statistical methods may be more suitable to your data. For more help, please contact the classical statistical consultancy at support@statsomat.com.", fill=TRUE)
+               cat("\\newline",fill=TRUE)
+              output13 <- TRUE
+              refs13 <-TRUE
+             }}
+             
+             
+           if (check==FALSE & checkm==TRUE & output13==FALSE) {
+            # Breusch-Godfrey test on ranks 
+             if (autocorr(rank(df_num[,j]),rank(df_num[,k])) == FALSE){
+               cat("Warning:  We assume that the observations are independent and identically distributed. But a preliminary statistical test of serial correlation indicates that the observations may be not independent. Sometimes, this can be caused by a missing covariate. In that case other statistical methods may be more suitable to your data. For more help, please contact the classical statistical consultancy at support@statsomat.com.", fill=TRUE)
+               cat("\\newline",fill=TRUE)
+              output13 <- TRUE
+              refs13 <- TRUE
+             }}
+             
+           }, error=function(e){cat("")}) 
+          
+          
+          
+          tryCatch({ 
+             # Small linear correlation - maybe other sort of dependence? 
+              text <- "Warning: Other measures of dependence besides the classical coefficients of correlation e.g. the Distance Correlation or the Maximal Information Coefficient may indicate a significant relationship between the variables. For more help, please contact the classical statistical consultancy at support@statsomat.com."
+              
+              if (check==TRUE){
+                if (abs(pcorrelation)<0.2 & output14==FALSE) {
+                  if (dependence(df_num[,j],df_num[,k])==TRUE) {
+                  refs14 <- TRUE
+                  output14 <- TRUE
+                  cat(text, fill=TRUE)
+                  cat("\\newline",fill=TRUE)
+                  }
+                }
+              }
+              
+              
+              if (check==FALSE & checkm==TRUE){
+                if (abs(spcorrelation)<0.2 & abs(ken)<0.2 & output14==FALSE) {
+                  if (dependence(df_num[,j],df_num[,k])==TRUE) {
+                  refs14 <- TRUE
+                  output14 <- TRUE
+                  cat(text, fill=TRUE)
+                  cat("\\newline",fill=TRUE)
+                }
+              }
+            }
+            
+           }, error=function(e){cat("")}) 
+          
+          
+          
+          
+          # Sample size warning < 25
+            if (nrow(df_num) < 25) {
+                cat("Warning: The sample size may be too small to guarantee reliable confidence intervals and an acceptable power of the statistical tests implied in the results.", fill=TRUE)
+                cat("\\newline",fill=TRUE)
+            }
+           
+          
+          
+          
+          
+          #######
+          # Plots
+          #######
+          tryCatch({  
+            cat("",fill=TRUE)
+            scatterplotMatrix(~df_num[,j]+df_num[,k], smooth=FALSE, var.labels=colnames(df_num)[c(j,k)], main="Enhanced Scatterplots", col = "#2fa42d")
+            output15 <- TRUE
+            refs15 <- TRUE
+            cat("\n\n\\pagebreak\n")
+          }, error=function(e){cat("")}) 
+          
+          
+          # Cleanup for next pair
+          rm(list=setdiff(ls(), c("output_num","params","rateunique_df", "df_num", "combs", "count_lin", "count_interpretp",paste("refs",seq(1:16),sep=""))))
+        
+  }
+         
+}}}}
+```     
+     
+```{r, results="asis"}
+
+tryCatch({
+  
+  if (sum(rateunique_df) >= 2L & nrow(df_num)>=5){
+
+    # Title 
+    cat("\n# R Statistical Methods", fill=TRUE)
+    
+    cat("The statistical analysis was done using R [@stats]. ", fill=TRUE)
+    cat("\\newline",fill=TRUE)    
+    
+    if (exists("count_lin")){
+      if (count_lin>0) {
+        cat("Missing values are omitted, e.g. only complete observations are considered. ", fill=TRUE)
+        cat("\\newline",fill=TRUE)
+     #   cat("The preliminary assumption of linearity was checked by using the package MASS [@mass] and the boxcox function. For this #step, a preliminary treatment of outliers was performed.", fill=TRUE)
+    #    cat("\\newline",fill=TRUE)
+      }
+    }
+    
+    
+    if (nrow(df_num)<5000){
+      if ((refs2==TRUE || refs3==TRUE || refs4==TRUE)){
+        cat("The assumption of normality was checked by using the Shapiro-Wilk normality test with the shapiro.test function.", fill=TRUE)
+        cat("\\newline",fill=TRUE)
+      }
+    }
+    
+    
+    if (nrow(df_num)>=5000){
+      if ((refs2==TRUE || refs3==TRUE || refs4==TRUE)){
+        cat("The assumption of normality was checked by using the package nortest [@nortest] and the Anderson-Darling normality with the ad.test function.", fill=TRUE)
+        cat("\\newline",fill=TRUE)
+      }
+    }
+    
+    
+    if (refs13==TRUE){
+      # Breusch-Godfrey Test
+     # cat("An auxiliary check of serial correlation was done using the lmtest package [@lmtest] and the Breusch-Godfrey test with the # the bgtest function.", fill=TRUE)
+    #  cat("\\newline",fill=TRUE)
+    }
+    
+    
+    if (refs1==TRUE){
+      # Pearson 
+      cat("The Pearson correlation coefficient was computed using the function: cor.", fill=TRUE)
+    }
+    
+    
+    if (refs2==TRUE){
+      # Fisher's CI for Pearson correlation coefficient 
+     cat("The confidence interval and the hypothesis test for the Pearson correlation coefficient were computed using the cor.test function. ", fill=TRUE)
+    }
+    
+    
+    if (refs3==TRUE){
+       # Boot CI for Pearson correlation coefficient 
+      cat("The bootstrap confidence interval for the Pearson correlation coefficient was computed using the boot package [@boot1] and [@boot2]. In this app we consider 1000 bootstrap replications. ", fill=TRUE)
+    }
+    
+    
+    if (exists("count_interpretp")){
+      if (count_interpretp>0){
+        cat("The interpretation of the size of the estimated Pearson correlation coefficient relies on Cohen [@cohen]. The interpretation of the size of the Pearson correlation coefficient depends also on your context and purposes. Please consider additional literature from your field of operations to determine common effect sizes. ", fill=TRUE)
+        cat("\\newline",fill=TRUE)
+      }
+    }
+    
+    
+    if (refs4==TRUE || refs5==TRUE){
+      # Spearman 
+      cat("The Spearman correlation coefficient was computed using the cor function.", fill=TRUE)
+    }
+      
+    
+    if (refs6==TRUE){
+      # CI Spearman
+      cat("The confidence interval for the Spearman rank correlation coefficient was computed using the DescTools package [@spearmanrho] and the SpearmanRho function. The hypothesis test for the Spearman rank correlation coefficient was computed with the cor.test function. The interpretation of the size of the estimated Spearman rank correlation coefficient relies on Cohen [@cohen]. The interpretation of the size of the Spearman correlation coefficient depends also on your context and purposes. Please consider additional literature from your field of operations to determine common effect sizes. ", fill=TRUE)
+      cat("\\newline",fill=TRUE)
+    }
+    
+    
+    if (refs7==TRUE){
+      # Kendall
+      cat("The Kendall's tau correlation coefficient was computed using the cor function. ", fill=TRUE)
+    }
+    
+    
+    if (refs8==TRUE){
+      # Kendall
+      cat("The hypothesis test for the Kendall's tau rank correlation coefficient was computed with the cor.test function. ", fill=TRUE)
+      cat("\\newline",fill=TRUE)
+    }
+    
+    
+    if (refs10==TRUE || refs11==TRUE){
+      # Dependence test
+      cat("The dependency was analyzed by using the Maximal Information Coefficient (MIC) and the distance correlation coefficient. The Maximal Information Coefficient (MIC) was computed by using the package testforDEP [@testfordep] and the function: testforDEP. The distance correlation was computed by using the package energy [@energy] and the function: dcor.test. ", fill=TRUE)
+      cat("\\newline",fill=TRUE)
+    }
+    
+    
+    if (refs12==TRUE){
+      # Outlier 
+      cat("A statistical test for outliers for the residuals of a linear regression was done using the package car [@car] and the function: outlierTest.", fill=TRUE)
+      cat("\\newline",fill=TRUE)
+    }
+    
+    
+    if (refs15==TRUE){
+      # Plots 
+      cat("The scatterplots were done using the package car [@car] and the scatterplotMatrix function.", fill=TRUE)
+      cat("Univariate distribution fits are displayed on the main diagonal. The fitted linear regression line is added to the scatterplots.")
+      cat("\\newline",fill=TRUE)
+    }
+    
+    if (exists("count_lin")){
+      if (count_lin>0) {
+      cat("Preliminary assumptions are based on statistical hypothesis tests performed at a 1%-5% type I error rate and calibrated with other test-specific rules. ", fill=TRUE)
+      cat("\\newline",fill=TRUE)
+      }
+    }
+    
+    if (refs14==TRUE){
+      cat("Note: There are variable pairs for which classical coefficients of correlation are small in absolute value but other measures of dependency, e.g. the Maximal Information Coefficient or the Distance Correlation could reveal a significant dependence relationship. For more help please contact the classical statistical consultancy at support@statsomat.com.", fill=TRUE)
+      cat("\\newline",fill=TRUE)
+    }
+    
+    outp<-c(refs1,refs4,refs5,refs7,refs10,refs11,refs14)
+    if (sum(outp)>1){
+        cat("Note: From a theoretical point of view, the different correlations coefficients cannot be compared in absolute value. They rely on different measures of dependency between random variables. Therefore, they have different interpretations. What they have in common is their attempt to detect dependency between random variables. ", fill=TRUE)
+        cat("\\newline",fill=TRUE)
+    }
+      
+  }
+}, error=function(e) {cat("")}
+
+)
+
+```
+
+
+

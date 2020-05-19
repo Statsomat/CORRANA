@@ -1,0 +1,129 @@
+---
+title: "Correlation and Association"
+---
+
+
+```{whites, eval=FALSE, echo = output_num}
+# Drop columns if all observations are missing 
+col_names_missing <- sapply(df, function(col) all(is.na(col)))
+df[ ,col_names_missing] <- list(NULL)
+
+# Drop empty rows (if any)
+rowsums <- data.frame(sapply(df,is.na))
+if (length(which(rowSums(rowsums) == dim(df)[2])) != 0L){
+  rows_drop <- (which(rowSums(rowsums) == dim(df)[2]))
+  length_non_complete <- length(which(rowSums(rowsums) == dim(df)[2]))
+  df <- df[-rows_drop, ,drop=FALSE]
+}
+
+# Convert logical variables to character (if any)
+cols_logical <- sapply(df, function(col) is.logical(col))
+df[ ,cols_logical] <- sapply(df[ ,cols_logical], as.character)
+
+# Convert numerical variables with less than 4 unique values to character (omit NAs)
+col_names_numeric <- sapply(df, function(col) 
+  length(unique(na.omit(col))) < 4L & is.numeric(col))
+df[ ,col_names_numeric] <- sapply(df[ ,col_names_numeric], as.character)
+
+# Extract numerical variables    
+df_num <- df[which(sapply(df, is.numeric) == 1L)]
+
+# Reorder numerical variables alphabetically 
+df_num <- df_num[,order(colnames(df_num)),drop=FALSE]
+```
+
+
+```{r, results="asis"}
+
+options(na.action=na.omit)
+
+if (exists("df_num")){
+  
+  if (ncol(df_num)>0L & nrow(df_num)>=5){
+    
+    if (sum(rateunique_df) >= 2L){
+      
+      combs = combn(c(1:(ncol(df_num))),2)
+      
+      # Initialize refs as FALSE
+      count_lin <- 0
+      count_interpretp <- 0
+      trace(linearity,tracer=function() {count_lin <<- count_lin + 1},print=FALSE)
+      trace(interpret_p,tracer=function() {count_interpretp <<- count_interpretp + 1},print=FALSE)
+      
+      for (s in 1:16){
+        name2 <- paste("refs",s,sep="")
+        assign(name2,FALSE)
+      }
+      
+      # Analysis for each pair 
+      for (i in 1:ncol(combs)){
+        
+        j = combs[1,i]
+        k = combs[2,i]
+        
+        # Initialize outputs as FALSE
+        for (s in 1:16){
+          name <- paste("output",s,sep="")
+          assign(name,FALSE)
+        }
+        
+        
+        # Define rate of unique values to control continuity 
+        rateunique1 <- length(unique(df_num[,j])) / nrow(df_num)
+        rateunique2 <- length(unique(df_num[,k])) / nrow(df_num)
+        
+        
+        # Consider bivariate continuous 
+        if (rateunique1 >= cutoffcont(nrow(df_num)) & rateunique2 >= cutoffcont(nrow(df_num))){
+          
+          cat("\\# `Column Numbers:`",j,"`and`",k)
+          cat("\\newline ")                                                                          
+          cat("`j =`",j)
+          cat("\\newline ")                                                                                                    
+          cat("`k =`",k)
+          cat("\\newline ")                                                                                                        
+          
+          tryCatch({
+            # Define check function for Pearson
+            check <- linearity(df_num[,j],df_num[,k])
+          }, error=function(e){cat("")})     
+          
+          
+          tryCatch({
+            # Define check function for Spearman & Kendall 
+            checkm <- linearity(rank(df_num[,j]),rank(df_num[,k]))
+          }, error=function(e){cat("")})    
+          
+          
+          tryCatch({
+            pcorrelation <- cor(df_num[,j],df_num[,k], use="complete.obs", method="pearson")
+          }, error=function(e){cat("")})    
+          
+          
+          
+          tryCatch({
+            spcorrelation <- cor(df_num[,j],df_num[,k], use="complete.obs", method="spearman")
+          }, error=function(e){cat("")})   
+          
+          
+          tryCatch({
+            ken <- cor(df_num[,j],df_num[,k], use="complete.obs", method="kendall")
+          }, error=function(e){cat("")}) 
+          
+          
+          tryCatch({  
+            if (check==TRUE & exists("pcorrelation")) {
+              cat("`pcorrelation <- cor(df_num[,j],df_num[,k], use=\"complete.obs\", method=\"pearson\")`")
+              cat("\\newline ") 
+              cat("`round(pcorrelation,4)`")
+              cat("\\newline ")    
+            }
+          }, error=function(e){}) 
+          
+          
+          
+          
+        }}}}}
+          
+```

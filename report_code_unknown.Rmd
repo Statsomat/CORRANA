@@ -1,0 +1,150 @@
+---
+title: "Correlation and Association"
+author: "Statsomat.com"
+date: "`r format(Sys.time(), '%d %B %Y')`"
+output:
+  pdf_document:
+    latex_engine: xelatex
+    toc: true
+    toc_depth: 2
+bibliography: ["references.bib"]
+fontsize: 11pt
+params:
+  data: NA
+  filename: NA
+  fencoding: NA
+  decimal: NA
+  enc_guessed: NA
+  vars1: NA
+  vars2: NA
+header-includes:
+   - \usepackage{xcolor}
+   - \setmainfont[BoldFont=FiraSans-Bold, Extension=.otf]{FiraSans-Regular}
+   - \usepackage{booktabs}
+   - \usepackage{longtable}
+---
+
+
+**Warning: The automatic computation and interpretation delivered by the Statsomat should not completely replace the classical, made by humans graphical exploratory data analysis and statistical analysis. There may be data cases for which the Statsomat does not deliver the most optimal solution.**
+
+
+```{r child = 'report_kernel.Rmd'}
+```
+
+
+\pagebreak
+
+# R Packages
+\small
+The statistical numbers and graphics within this report are generated with following R and packages versions:
+
+```{r}
+cat("R version:", paste0(R.Version()[c("major","minor")], collapse = "."))
+cat("Package data.table, version:", paste0(packageVersion("data.table")), fill=TRUE)
+cat("Package boot, version:", paste0(packageVersion("boot")), fill=TRUE)
+cat("Package car, version:", paste0(packageVersion("car")), fill=TRUE)
+cat("Package DescTools, version:", paste0(packageVersion("DescTools")), fill=TRUE)
+cat("Package testforDEP, version:", paste0(packageVersion("testforDEP")), fill=TRUE)
+cat("Package energy, version:", paste0(packageVersion("energy")), fill=TRUE)
+```
+
+\pagebreak
+
+# R Code 
+
+\normalsize\textcolor{blue}{Instructions\newline
+We assume that your data is saved here: "C:\textbackslash ". Otherwise, you can change the path to your data in the code below. For Windows users, avoid to use paths containing white spaces. \newline
+If not already available, please install R, RStudio and the requiered packages mentioned on the previous page. \newline
+Copy the code below page by page, paste it carefully in a new R Script within RStudio and run it. Please consider to always paste on a new line of the R Script. If necessary, enlarge the console for a better view of the output tables.}\newline  
+\textcolor{red}{Be careful not to accidentally copy and paste the page numbers of the PDF report!}
+
+<style>
+pre.whites {
+    background-color: #ffffff !important;
+}
+</style>
+
+```{whites, eval=FALSE, echo = TRUE}
+options(na.action=na.omit) # Option for missing values 
+
+# Import required libraries
+library(data.table)
+library(boot) 
+library(car) 
+library(DescTools) 
+library(testforDEP) 
+library(energy) 
+```
+`# Define the path to your data (please remark the forward slash)`
+\newline
+`filepath <-
+```{r, results="asis"}
+cat(paste0("\"C:/",params$filename[1],"\""))
+```
+`
+\newline
+\newline
+`# Upload the data`
+\newline
+`
+```{r, results="asis"}
+if (params$decimal == "auto"){
+  
+  datainput1 <- fread(params$filename$datapath, header = "auto", sep="auto", dec=".", encoding ="unknown", data.table = FALSE, na.strings = "")
+  
+   # Probably comma as decimal
+  colnames <- sapply(datainput1, function(col) is.numeric(col) & Negate(is.integer)(col))
+  if (sum(colnames) == 0L){
+    cat(paste0("df <- fread(filepath, header =\"auto\", sep =\"auto\", dec =\",\", encoding =\"unknown\", data.table = FALSE, na.strings = \"\")"))
+    
+  } else {
+    cat(paste0("df <- fread(filepath, header =\"auto\", sep =\"auto\", dec =\".\", encoding =\"unknown\", data.table = FALSE, na.strings = \"\")"))
+  }
+  
+} else {
+  
+  cat(paste0("df <- fread(filepath, header = \"auto\", sep =\"auto\", dec = \"", params$decimal,"\", encoding =  \"unknown\", data.table = FALSE, na.strings = \"\")"))
+  
+}
+```
+`
+\newline
+\newline
+`# Convert characters to UTF-8 encoding`
+\newline
+`## Depending on your local R settings`
+\newline
+`## you could try to ignore and skip the next 4 lines`
+\newline
+`
+```{r, results="asis"}
+  cat(paste0("colnames(df) <- iconv(colnames(df),\"",params$enc_guessed,"\",\"UTF-8\")"))
+```
+`
+\newline
+`
+```{r, results="asis"}
+  cat(paste0("col_names <- sapply(df, is.character)"))
+```
+`
+\newline
+`
+```{r, results="asis"}
+  cat(paste0("df[ ,col_names] <- sapply(df[, col_names], function(col) iconv(col, \"",params$enc_guessed,"\", \"UTF-8\"))"))
+```
+`
+```{r child = 'report_code_common.Rmd'}
+```
+
+```{r, results="asis"}
+# Title 
+tryCatch({
+  
+  if (sum(rateunique_df) >= 2L & nrow(df_num)>=5){
+    cat("\n# References", fill=TRUE)
+  }
+  
+}, error=function(e) {cat("")}
+
+)
+```
