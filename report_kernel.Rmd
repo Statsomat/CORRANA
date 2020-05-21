@@ -10,8 +10,8 @@ knitr::opts_chunk$set(echo = FALSE, comment='', message = FALSE, error = TRUE, w
 ```{r}
 # Get data
 df <- params$data
-df <- df[,params$vars1,drop=FALSE]
 df2 <- df
+df <- df[,params$vars1,drop=FALSE]
 ```
 
 ```{r}
@@ -186,7 +186,7 @@ tryCatch({
   
   if (sum(rateunique_df) >= 2L & nrow(df_num)>=5){
     cat("\n# Results for continuous vs continuous pairs", fill=TRUE)
-    cat("Columns ordered alphabetically", fill=TRUE)
+    cat("(ordered alphabetically)", fill=TRUE)
     output_num <- TRUE
   }}, error=function(e) {cat("")}
 
@@ -209,8 +209,12 @@ if (exists("df_num")){
     # Initialize refs as FALSE
     count_lin <- 0
     count_interpretp <- 0
+    count_pearsoncorr <- 0
+    count_pformat <- 0
     trace(linearity,tracer=function() {count_lin <<- count_lin + 1},print=FALSE)
     trace(interpret_p,tracer=function() {count_interpretp <<- count_interpretp + 1},print=FALSE)
+    trace(pearsoncorr,tracer=function() {count_pearsoncorr <<- count_pearsoncorr + 1},print=FALSE)
+    trace(pformat,tracer=function() {count_pformat <<- count_pformat + 1},print=FALSE)
       
     for (s in 1:16){
           name2 <- paste("refs",s,sep="")
@@ -237,11 +241,6 @@ if (exists("df_num")){
       
       # Consider bivariate continuous 
         if (rateunique1 >= cutoffcont(nrow(df_num)) & rateunique2 >= cutoffcont(nrow(df_num))){
-          
-          
-          title <- cbind(colnames(df_num)[k], "vs", colnames(df_num)[j])
-          
-          cat("\n## Column Numbers:",j,"and",k, fill=TRUE)
           
           print(kable(colnames(df_num)[c(j,k)],col.names="Column Names"))
       
@@ -445,7 +444,7 @@ if (exists("df_num")){
                   cat("The Maximal Information Coefficient (MIC) between the variables is ",round(micval,3), fill=TRUE)     
                   cat(". The statistical test of a zero MIC leads to a p-value of: ",pformat(mic@p_value), ". Therefore, the MIC is not statistically significant from 0 at a type I error rate of 5%. By using the MIC measure, we cannot identify a dependence between the variables. ", fill=TRUE)
                   cat("\\newline",fill=TRUE)
-                  cat("Background: The Maximal Information Coefficient is related to the relationship strenght and it can be interpreted as a correlation measure. It is symmetric and it ranges in [0,1], where it tends to 0 for statistically independent data and it approaches 1 in probability for noiseless functional relationships. ", fill=TRUE)
+                  cat("Background: The Maximal Information Coefficient is related to the relationship strength and it can be interpreted as a correlation measure. It is symmetric and it ranges in [0,1], where it tends to 0 for statistically independent data and it approaches 1 in probability for noiseless functional relationships. ", fill=TRUE)
                   cat("\\newline",fill=TRUE)
                 }
                 if (mic@p_value <= 0.05){ 
@@ -473,14 +472,14 @@ if (exists("df_num")){
                  
                 if (dist$p.value > 0.05){ 
                   cat("The distance correlation between the variables is ",round(dist$statistic,3),".", fill=TRUE)     
-                  cat("The statistical test of a zero distance correlation leads to a p-value of: ",round(dist$p.value,3),". Therefore, the distance correlation is not statistically significant from 0 at a type I error rate of 5%. By using the distance correlation measure, the Statsomat app cannot identify a dependence between the variables. ", fill=TRUE)
+                  cat("The statistical test of a zero distance correlation leads to a p-value of: ",pformat(dist$p.value),". Therefore, the distance correlation is not statistically significant from 0 at a type I error rate of 5%. By using the distance correlation measure, the Statsomat app cannot identify a dependence between the variables. ", fill=TRUE)
                   cat("\\newline",fill=TRUE)
                   cat("Background: The distance correlation is a measure of dependence between random vectors. It ranges in [0,1], where it tends to 0 for statistically independent data. ", fill=TRUE)
                   cat("\\newline",fill=TRUE)
                 }
                 if (dist$p.value <= 0.05){ 
                   cat("The distance correlation between the variables is ",round(dist$statistic,3),".", fill=TRUE)     
-                  cat("The statistical test of a zero distance correlation leads to a p-value of: ",round(dist$p.value,3), ". Therefore, the distance correlation is statistically significant from 0 at a type I error rate of 5%. By using this measure, the Statsomat app identifies a statistically significant dependence between the variables. ", fill=TRUE)
+                  cat("The statistical test of a zero distance correlation leads to a p-value of: ",pformat(dist$p.value), ". Therefore, the distance correlation is statistically significant from 0 at a type I error rate of 5%. By using this measure, the Statsomat app identifies a statistically significant dependence between the variables. ", fill=TRUE)
                   if (round(dist$statistic,3)<0.1){
                     cat("Nevertheless, the size of the distance correlation is very small and may have no practical importance. ", fill=TRUE)
                   }
@@ -650,7 +649,7 @@ if (exists("df_num")){
           
           
           # Cleanup for next pair
-          rm(list=setdiff(ls(), c("output_num","params","rateunique_df", "df_num", "combs", "count_lin", "count_interpretp",paste("refs",seq(1:16),sep=""))))
+          rm(list=setdiff(ls(), c("df2","output_num","params","rateunique_df", "df_num", "combs", "count_lin", "count_interpretp", "count_pearsoncorr","count_pformat",paste("refs",seq(1:16),sep=""))))
         
   }
          
@@ -756,7 +755,7 @@ tryCatch({
     
     if (refs10==TRUE || refs11==TRUE){
       # Dependence test
-      cat("The dependency was analyzed by using the Maximal Information Coefficient (MIC) and the distance correlation coefficient. The Maximal Information Coefficient (MIC) was computed by using the package testforDEP [@testfordep] and the function: testforDEP. The distance correlation was computed by using the package energy [@energy] and the function: dcor.test. ", fill=TRUE)
+      cat("Dependence was analyzed also by using the Maximal Information Coefficient (MIC) and the distance correlation coefficient. The Maximal Information Coefficient (MIC) was computed by using the package testforDEP [@testfordep] and the function: testforDEP. The distance correlation was computed by using the package energy [@energy] and the function: dcor.test. ", fill=TRUE)
       cat("\\newline",fill=TRUE)
     }
     
@@ -777,7 +776,7 @@ tryCatch({
     
     if (exists("count_lin")){
       if (count_lin>0) {
-      cat("Preliminary assumptions are based on statistical hypothesis tests performed at a 1%-5% type I error rate and calibrated with other test-specific rules. ", fill=TRUE)
+      cat("Preliminary assumptions used by the Statsomat app are based on statistical hypothesis tests performed at a 1%-5% type I error rate and calibrated with other test-specific rules. ", fill=TRUE)
       cat("\\newline",fill=TRUE)
       }
     }

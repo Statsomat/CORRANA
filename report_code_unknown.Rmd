@@ -31,32 +31,42 @@ header-includes:
 ```{r child = 'report_kernel.Rmd'}
 ```
 
-
-\pagebreak
-
-# R Packages
-\small
-The statistical numbers and graphics within this report are generated with following R and packages versions:
-
-```{r}
-cat("R version:", paste0(R.Version()[c("major","minor")], collapse = "."))
-cat("Package data.table, version:", paste0(packageVersion("data.table")), fill=TRUE)
-cat("Package boot, version:", paste0(packageVersion("boot")), fill=TRUE)
-cat("Package car, version:", paste0(packageVersion("car")), fill=TRUE)
-cat("Package DescTools, version:", paste0(packageVersion("DescTools")), fill=TRUE)
-cat("Package testforDEP, version:", paste0(packageVersion("testforDEP")), fill=TRUE)
-cat("Package energy, version:", paste0(packageVersion("energy")), fill=TRUE)
+```{r include=FALSE}
+eval_code=FALSE
+if (exists("df_num")){
+  if (ncol(df_num)>0L & nrow(df_num)>=5){
+    if (sum(rateunique_df) >= 2L){
+eval_code=TRUE
+}}}
 ```
 
-\pagebreak
 
-# R Code 
+```{r, results="asis", eval=eval_code}
+cat("\n# R Packages", fill=TRUE)
+cat("The statistical numbers and graphics within this report are generated with following R and packages versions:", fill=TRUE)
+cat("\\newline ")
+cat("R version:", paste0(R.Version()[c("major","minor")], collapse = "."), fill=TRUE)
+cat("\\newline ")
+cat("Package data.table, version:", paste0(packageVersion("data.table")), fill=TRUE)
+cat("\\newline ")
+cat("Package boot, version:", paste0(packageVersion("boot")), fill=TRUE)
+cat("\\newline ")
+cat("Package car, version:", paste0(packageVersion("car")), fill=TRUE)
+cat("\\newline ")
+cat("Package DescTools, version:", paste0(packageVersion("DescTools")), fill=TRUE)
+cat("\\newline ")
+cat("Package testforDEP, version:", paste0(packageVersion("testforDEP")), fill=TRUE)
+cat("\\newline ")
+cat("Package energy, version:", paste0(packageVersion("energy")), fill=TRUE)
+cat("\\pagebreak")
+```
 
-\normalsize\textcolor{blue}{Instructions\newline
-We assume that your data is saved here: "C:\textbackslash ". Otherwise, you can change the path to your data in the code below. For Windows users, avoid to use paths containing white spaces. \newline
-If not already available, please install R, RStudio and the requiered packages mentioned on the previous page. \newline
-Copy the code below page by page, paste it carefully in a new R Script within RStudio and run it. Please consider to always paste on a new line of the R Script. If necessary, enlarge the console for a better view of the output tables.}\newline  
-\textcolor{red}{Be careful not to accidentally copy and paste the page numbers of the PDF report!}
+```{r, results="asis", eval=eval_code}
+cat("\n# R Code ", fill=TRUE)
+cat("\\normalsize\\textcolor{blue}{Instructions\\newline
+We assume that your data is saved here: \"C:\\textbackslash \". Otherwise, you can change the path to your data in the code below. For Windows users, avoid to use paths containing white spaces. If not already available, please install R, RStudio and the requiered packages mentioned on the previous page. Copy the code below, paste it carefully in a new R Script within RStudio and run it. Do not copy and paste the page numbers from the PDF report. If necessary, enlarge the console for a better view of the output. }
+\\newline")
+```
 
 <style>
 pre.whites {
@@ -64,7 +74,7 @@ pre.whites {
 }
 </style>
 
-```{whites, eval=FALSE, echo = TRUE}
+```{whites, eval=FALSE, echo = eval_code}
 options(na.action=na.omit) # Option for missing values 
 
 # Import required libraries
@@ -75,76 +85,53 @@ library(DescTools)
 library(testforDEP) 
 library(energy) 
 ```
-`# Define the path to your data (please remark the forward slash)`
-\newline
-`filepath <-
-```{r, results="asis"}
-cat(paste0("\"C:/",params$filename[1],"\""))
+
+```{r, results="asis", eval=eval_code}
+cat("\\# `Define the path to your data (please remark the forward slash)`")
+cat("\\newline ")  
+cat("`filepath <-")
+cat(paste0("\"C:/",params$filename[1],"\"`"))
 ```
-`
-\newline
-\newline
-`# Upload the data`
-\newline
-`
-```{r, results="asis"}
+
+```{r, results="asis", eval=eval_code}
 if (params$decimal == "auto"){
-  
+  cat("\\# `Upload the data`")
+  cat("\\newline ")  
   datainput1 <- fread(params$filename$datapath, header = "auto", sep="auto", dec=".", encoding ="unknown", data.table = FALSE, na.strings = "")
   
    # Probably comma as decimal
   colnames <- sapply(datainput1, function(col) is.numeric(col) & Negate(is.integer)(col))
   if (sum(colnames) == 0L){
-    cat(paste0("df <- fread(filepath, header =\"auto\", sep =\"auto\", dec =\",\", encoding =\"unknown\", data.table = FALSE, na.strings = \"\")"))
+    cat(paste0("`df <- fread(filepath, header =\"auto\", sep =\"auto\", dec =\",\", encoding =\"unknown\", data.table = FALSE, na.strings = \"\")`"))
     
   } else {
-    cat(paste0("df <- fread(filepath, header =\"auto\", sep =\"auto\", dec =\".\", encoding =\"unknown\", data.table = FALSE, na.strings = \"\")"))
+    cat(paste0("`df <- fread(filepath, header =\"auto\", sep =\"auto\", dec =\".\", encoding =\"unknown\", data.table = FALSE, na.strings = \"\")`"))
   }
   
 } else {
   
-  cat(paste0("df <- fread(filepath, header = \"auto\", sep =\"auto\", dec = \"", params$decimal,"\", encoding =  \"unknown\", data.table = FALSE, na.strings = \"\")"))
+  cat(paste0("`df <- fread(filepath, header = \"auto\", sep =\"auto\", dec = \"", params$decimal,"\", encoding =  \"unknown\", data.table = FALSE, na.strings = \"\")`"))
   
 }
 ```
-`
-\newline
-\newline
-`# Convert characters to UTF-8 encoding`
-\newline
-`## Depending on your local R settings`
-\newline
-`## you could try to ignore and skip the next 4 lines`
-\newline
-`
-```{r, results="asis"}
-  cat(paste0("colnames(df) <- iconv(colnames(df),\"",params$enc_guessed,"\",\"UTF-8\")"))
-```
-`
-\newline
-`
-```{r, results="asis"}
-  cat(paste0("col_names <- sapply(df, is.character)"))
-```
-`
-\newline
-`
-```{r, results="asis"}
-  cat(paste0("df[ ,col_names] <- sapply(df[, col_names], function(col) iconv(col, \"",params$enc_guessed,"\", \"UTF-8\"))"))
-```
-`
-```{r child = 'report_code_common.Rmd'}
+
+```{r, results="asis", eval=eval_code}
+cat("\\# `Convert characters to UTF-8 encoding`")
+cat("\\newline ")
+cat("\\## `Depending on your local R settings`")
+cat("\\newline ")
+cat("\\## `you could try to ignore and skip the next 4 lines`")
+cat("\\newline ")
+cat(paste0("`colnames(df) <- iconv(colnames(df),\"",params$enc_guessed,"\",\"UTF-8\")`"))
+cat("\\newline ")
+cat(paste0("`col_names <- sapply(df, is.character)`"))
+cat("\\newline ")
+cat(paste0("`df[ ,col_names] <- sapply(df[, col_names], function(col) iconv(col, \"",params$enc_guessed,"\", \"UTF-8\"))`"))
 ```
 
-```{r, results="asis"}
-# Title 
-tryCatch({
-  
-  if (sum(rateunique_df) >= 2L & nrow(df_num)>=5){
-    cat("\n# References", fill=TRUE)
-  }
-  
-}, error=function(e) {cat("")}
+```{r child = 'report_code_common.Rmd', eval=eval_code}
+```
 
-)
+```{r, results="asis", eval=eval_code}
+cat("\n# References", fill=TRUE)
 ```

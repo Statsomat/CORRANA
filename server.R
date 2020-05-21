@@ -139,7 +139,7 @@ shinyServer(function(input, output, session) {
         col_names <- sapply(datainput1, is.character)
         datainput1[ ,col_names] <- sapply(datainput1[, col_names], function(col) iconv(col, enc_guessed_first, "UTF-8"))
         size <- min(dim(datainput1)[1],15)
-        datainput1 <- datainput1[1:size,,drop=FALSE]
+   #     datainput1 <- datainput1[1:size,,drop=FALSE]
         datainput1
         
       }
