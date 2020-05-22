@@ -1,4 +1,4 @@
-options(shiny.maxRequestSize = 32*1024^2)
+options(shiny.maxRequestSize = 5*1024^2)
 options(shiny.sanitize.errors = TRUE)
 
 library(shiny)
@@ -85,21 +85,13 @@ shinyServer(function(input, output, session) {
         if (sum(colnames) == 0L){
           
           datainput1 <- fread(input$file$datapath, header = "auto", sep="auto", dec=",", encoding = "UTF-8", data.table = FALSE, na.strings = "")
-          size <- min(dim(datainput1)[1],15)
-          datainput1 <- datainput1[1:size,,drop=FALSE]
           datainput1
           
-        } else {
-          size <- min(dim(datainput1)[1],15)
-          datainput1 <- datainput1[1:size,,drop=FALSE]
-          datainput1
-          }
+        } else {datainput1}
         
       } else if (input$fencoding == "UTF-8" & input$decimal != "auto") {
         
         datainput1 <- fread(input$file$datapath, header = "auto", sep="auto", dec=input$decimal, encoding = "UTF-8", data.table = FALSE, na.strings = "")
-        size <- min(dim(datainput1)[1],15)
-        datainput1 <- datainput1[1:size,,drop=FALSE]
         datainput1
         
         
@@ -117,8 +109,6 @@ shinyServer(function(input, output, session) {
           colnames(datainput1) <- iconv(colnames(datainput1), enc_guessed_first, "UTF-8")
           col_names <- sapply(datainput1, is.character)
           datainput1[ ,col_names] <- sapply(datainput1[, col_names], function(col) iconv(col, enc_guessed_first, "UTF-8"))
-          size <- min(dim(datainput1)[1],15)
-       #   datainput1 <- datainput1[1:size,,drop=FALSE]
           datainput1
           
         } else {
@@ -126,8 +116,6 @@ shinyServer(function(input, output, session) {
           colnames(datainput1) <- iconv(colnames(datainput1), enc_guessed_first, "UTF-8")
           col_names <- sapply(datainput1 , is.character)
           datainput1[ ,col_names] <- sapply(datainput1[, col_names], function(col) iconv(col, enc_guessed_first, "UTF-8"))
-          size <- min(dim(datainput1)[1],15)
-    #      datainput1 <- datainput1[1:size,,drop=FALSE]
           datainput1}
         
       } else {
@@ -138,8 +126,6 @@ shinyServer(function(input, output, session) {
         colnames(datainput1) <- iconv(colnames(datainput1), enc_guessed_first, "UTF-8")
         col_names <- sapply(datainput1, is.character)
         datainput1[ ,col_names] <- sapply(datainput1[, col_names], function(col) iconv(col, enc_guessed_first, "UTF-8"))
-        size <- min(dim(datainput1)[1],15)
-   #     datainput1 <- datainput1[1:size,,drop=FALSE]
         datainput1
         
       }
@@ -278,7 +264,7 @@ shinyServer(function(input, output, session) {
     
     
     filename = function() {
-      paste('MyReport', sep = '.','pdf')
+      paste('MyReport', sep = '.', switch(input$format, PDF = 'pdf', Word = 'docx'))
     },
     
     content = function(file) {
@@ -290,6 +276,12 @@ shinyServer(function(input, output, session) {
       src4 <- normalizePath('references.bib')
       src5 <- normalizePath('report_code_unknown.Rmd') 
       src6 <- normalizePath('report_code_common.Rmd') 
+      src7 <- normalizePath('report_code_UTF8.Rmd')
+      src8 <- normalizePath('FiraSans-Bold.otf')
+      src9 <- normalizePath('FiraSans-Regular.otf')
+      src10 <- normalizePath('word_template.docx')
+      src11 <- normalizePath('report_kernel_word.Rmd')
+      src12 <- normalizePath('report_word.Rmd')
       
       # Temporarily switch to the temp dir
       owd <- setwd(tempdir())
@@ -301,6 +293,12 @@ shinyServer(function(input, output, session) {
       file.copy(src4, 'references.bib', overwrite = TRUE)
       file.copy(src5, 'report_code_unknown.Rmd', overwrite = TRUE)
       file.copy(src6, 'report_code_common.Rmd', overwrite = TRUE)
+      file.copy(src7, 'report_code_UTF8.Rmd', overwrite = TRUE)
+      file.copy(src8, 'FiraSans-Bold.otf', overwrite = TRUE)
+      file.copy(src9, 'FiraSans-Regular.otf', overwrite = TRUE)
+      file.copy(src10, 'word_template.docx', overwrite = TRUE)
+      file.copy(src11, 'report_kernel_word.Rmd', overwrite = TRUE)
+      file.copy(src12, 'report_word.Rmd', overwrite = TRUE)
       
       # Set up parameters to pass to Rmd document
       enc_guessed <- guess_encoding(input$file$datapath)
@@ -318,14 +316,42 @@ shinyServer(function(input, output, session) {
           Sys.sleep(0.25)
           
         }
-        
      
-          out <- render('report_code_unknown.Rmd', pdf_document(latex_engine = "xelatex"),
-                                params = params,
-                                envir = new.env(parent = globalenv())
-                            )
-
-          file.rename(out, file)
+        if (input$format == "Word"){
+          
+          out <- render('report_word.Rmd', output_format = "word_document",
+                        params = params,
+                        envir = new.env(parent = globalenv())
+          )
+        }
+        
+        
+        if (input$rcode == "No" & input$format == "PDF"){
+          
+          out <- render('report.Rmd', pdf_document(latex_engine = "xelatex"),
+                        params = params,
+                        envir = new.env(parent = globalenv())
+          )
+        }
+        
+        
+        if (input$rcode == "Yes" & input$format == "PDF"){
+          
+          if (input$fencoding == "UTF-8"){
+            
+            out <- render('report_code_UTF8.Rmd', pdf_document(latex_engine = "xelatex"),
+                          params = params,
+                          envir = new.env(parent = globalenv())
+                          
+            )} else {out <- render('report_code_unknown.Rmd', pdf_document(latex_engine = "xelatex"),
+                                   params = params,
+                                   envir = new.env(parent = globalenv())
+            )}
+          
+        }
+        
+        
+        file.rename(out, file)
         
       })
       

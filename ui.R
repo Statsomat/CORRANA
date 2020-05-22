@@ -1,4 +1,3 @@
-options(shiny.sanitize.errors = TRUE)
 
 library(shiny)
 
@@ -156,6 +155,8 @@ shinyUI(fluidPage(
            
            wellPanel(style = "background: #ff9900", 
                      h3("Download the Report"),
+                     radioButtons('format', 'Format', c('PDF','Word'), inline = TRUE),
+                     uiOutput("ui"),
                      h5("Click the button to download:"),
                      downloadButton('downloadReport','', 
                                     style="

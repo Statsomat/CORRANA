@@ -199,7 +199,7 @@ tryCatch({
 
 ```
 
-```{r, results="asis", dev="cairo_pdf"}
+```{r, results="asis"}
 
 options(na.action=na.omit)
 
@@ -654,16 +654,14 @@ if (exists("df_num")){
           
           
           # Cleanup for next pair
-        #  rm(list=setdiff(ls(), c("df2","output_num","params","rateunique_df", "df_num", "combs", "count_lin", "count_interpretp", "count_pearsoncorr","count_pformat",paste("refs",seq(1:16),sep=""))))
-          
-          rm(list=c("check", "checkm", "pcorrelation", "spcorrelation", "ken", "dist", "mic", paste("output",seq(1:16),sep="")))
+          rm(list=setdiff(ls(), c("df2","output_num","params","rateunique_df", "df_num", "combs", "count_lin", "count_interpretp", "count_pearsoncorr","count_pformat",paste("refs",seq(1:16),sep=""))))
         
   }
          
 }}}}
 ```     
      
-```{r, results="asis"}
+```{r, results="asis", eval=FALSE}
 
 tryCatch({
   
