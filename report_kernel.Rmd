@@ -654,8 +654,6 @@ if (exists("df_num")){
           
           
           # Cleanup for next pair
-        #  rm(list=setdiff(ls(), c("df2","output_num","params","rateunique_df", "df_num", "combs", "count_lin", "count_interpretp", "count_pearsoncorr","count_pformat",paste("refs",seq(1:16),sep=""))))
-          
           rm(list=c("check", "checkm", "pcorrelation", "spcorrelation", "ken", "dist", "mic", paste("output",seq(1:16),sep="")))
         
   }

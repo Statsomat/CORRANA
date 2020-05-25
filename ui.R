@@ -29,34 +29,16 @@ shinyUI(fluidPage(
   singleton(tags$head(HTML(
     '
   <script type="text/javascript">
+    
+    
+    $(document).ready(function() {
+      $("#download").attr("disabled", "true").attr("onclick", "return false;");
+      Shiny.addCustomMessageHandler("check_generation", function(message) {
+        $("#download").removeAttr("disabled").removeAttr("onclick").html("");
+      });
+    })
+    
   
-    
-    $(document).ready(function() {
-      $("#downloadReport").attr("disabled", "true").attr("onclick", "return false;");
-      Shiny.addCustomMessageHandler("check_download", function(message) {
-        $("#downloadReport").removeAttr("disabled").removeAttr("onclick").html("");
-      });
-    })
-    
-    
-    $(document).ready(function() {
-      Shiny.addCustomMessageHandler("check_utf8", function(message) {
-        $("#downloadReport").attr("disabled", "true");
-      });
-    })
-    
-     $(document).ready(function() {
-      Shiny.addCustomMessageHandler("check_csv", function(message) {
-        $("#downloadReport").attr("disabled", "true");
-      });
-    })
-    
-     $(document).ready(function() {
-      Shiny.addCustomMessageHandler("check_fread", function(message) {
-        $("#downloadReport").attr("disabled", "true");
-      });
-    })
-    
     
   </script>
   '
@@ -88,7 +70,11 @@ shinyUI(fluidPage(
       column(6, 
              
              wellPanel(style = "background: #fff;", includeHTML("www/Description.html")),  
-             wellPanel(style = "background: #fff;", includeHTML("www/Instructions.html")) 
+             wellPanel(style = "background: #fff;", includeHTML("www/Instructions.html")),
+             wellPanel(style = "background: #fff;", includeHTML("www/Secure.html")), 
+             wellPanel(style = "background: #fff;", includeHTML("www/Other.html")),
+             wellPanel(style = "background: #fff;", includeHTML("www/OpenSource.html"))
+            
              
       ),
                  
@@ -136,30 +122,18 @@ shinyUI(fluidPage(
                       h3("Select Variables"),
                       
                       uiOutput("selection1")
-                      
-                      
-            )
+                    
+            ),
             
-      
-      )
-                  
-  )
-  
-  ,
-  
-  
-  fluidRow( 
-    
-    
-    column(12, align="center", 
-           
-           wellPanel(style = "background: #ff9900", 
-                     h3("Download the Report"),
-                     radioButtons('format', 'Format', c('PDF','Word'), inline = TRUE),
-                     uiOutput("ui"),
-                     h5("Click the button to download:"),
-                     downloadButton('downloadReport','', 
-                                    style="
+            wellPanel(style = "background: #ff9900", align="center", 
+                      
+                      h3("Generate the Report"),
+                      
+                      radioButtons('rcode', 'Include R Code', c('Yes','No'), inline = TRUE),
+                      
+                      h5("Click the button to generate the report:"),
+                      
+                      actionButton("generate", "", style="
                                     height:145px;
                                     width:84px;
                                     padding-top: 3px;
@@ -167,48 +141,45 @@ shinyUI(fluidPage(
                                     background-color: #ff9900; 
                                     border-color: #ff9900;
                                     background-image: url('Button.gif');")
-                       
-                    
-                     
-                     )
-           
-                     
-           )
-    
-      ),
+                      
+                      
+            ),
+            
+            wellPanel(style = "background: #ff9900", align="center", 
+                      
+                      h3("Download the Report"),
+                      
+                      h5("Click the button to download the report:"),
+                      
+                      downloadButton("download", "", style="
+                                    height:145px;
+                                    width:84px;
+                                    padding-top: 3px;
+                                    color:#ff9900; 
+                                    background-color: #ff9900; 
+                                    border-color: #ff9900;
+                                    background-image: url('Button.gif');") 
+                      
+                      
+            )
+      )
+                  
+  )
+  ,
   
   
-#  fluidRow( 
-    
-    
-  #  column(12, align="center", 
-           
-   #        wellPanel(style = "background: #ff9900;", includeHTML("www/Buy2.html")), 
-           
- #   )
-    
-#  ),
-  
-  
-  
-  
+
   fluidRow( 
     
-    column(6, 
-           
-           wellPanel(style = "background: #fff;", includeHTML("www/Secure.html")), 
-           wellPanel(style = "background: #fff;", includeHTML("www/Other.html"))
-           
-    ),
     
     column(6, 
            
            wellPanel(style = "background: #fff;", includeHTML("www/Also.html")),
-           wellPanel(style = "background: #fff;", includeHTML("www/OpenSource.html"))
+          
     
     ),
 
-    column(12, 
+    column(6, 
        
        wellPanel(style = "background: #fff;", includeHTML("www/Contact.html"))
        

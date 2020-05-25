@@ -289,7 +289,7 @@ dependence <- function(x,y){
   temp2 <- temp[complete.cases(temp),]
   dist <- dcor.test(temp2[,1],temp2[,2], R=100)
   
-  if ((mic@TS>=0.2 & mic@p_value <= 0.05) || (dist$statistic >=0.2 & dist$p.value <= 0.05)){
+  if ((mic@TS>=0.3 & mic@p_value <= 0.05) || (dist$statistic >=0.3 & dist$p.value <= 0.05)){
     return(TRUE)
   } else {return(FALSE)}
   
