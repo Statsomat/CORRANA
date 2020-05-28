@@ -97,37 +97,23 @@ cat(paste0("\"C:/",params$filename[1],"\"`"))
 if (params$decimal == "auto"){
   cat("\\# `Upload the data`")
   cat("\\newline ")  
-  datainput1 <- fread(params$filename$datapath, header = "auto", sep="auto", dec=".", encoding ="unknown", data.table = FALSE, na.strings = "")
+ datainput1 <- fread(params$filename$datapath, header = "auto", sep="auto", dec=".", encoding = "UTF-8", data.table = FALSE, na.strings = "")
   
    # Probably comma as decimal
   colnames <- sapply(datainput1, function(col) is.numeric(col) & Negate(is.integer)(col))
   if (sum(colnames) == 0L){
-    cat(paste0("`df <- fread(filepath, header =\"auto\", sep =\"auto\", dec =\",\", encoding =\"unknown\", data.table = FALSE, na.strings = \"\")`"))
+    cat(paste0("`df <- fread(filepath, header =\"auto\", sep =\"auto\", dec =\",\", encoding =\"UTF-8\", data.table = FALSE, na.strings = \"\")`"))
     
   } else {
-    cat(paste0("`df <- fread(filepath, header =\"auto\", sep =\"auto\", dec =\".\", encoding =\"unknown\", data.table = FALSE, na.strings = \"\")`"))
+    cat(paste0("`df <- fread(filepath, header =\"auto\", sep =\"auto\", dec =\".\", encoding =\"UTF-8\", data.table = FALSE, na.strings = \"\")`"))
   }
   
 } else {
   cat("\\# `Upload the data`")
-  cat("\\newline ") 
-  cat(paste0("`df <- fread(filepath, header = \"auto\", sep =\"auto\", dec = \"", params$decimal,"\", encoding =  \"unknown\", data.table = FALSE, na.strings = \"\")`"))
+  cat("\\newline ")
+  cat(paste0("`df <- fread(filepath, header = \"auto\", sep =\"auto\", dec = \"", params$decimal,"\", encoding =  \"UTF-8\", data.table = FALSE, na.strings = \"\")`"))
   
 }
-```
-
-```{r, results="asis", eval=eval_code}
-cat("\\# `Convert characters to UTF-8 encoding`")
-cat("\\newline ")
-cat("\\## `Depending on your local R settings`")
-cat("\\newline ")
-cat("\\## `you could try to ignore and skip the next 4 lines`")
-cat("\\newline ")
-cat(paste0("`colnames(df) <- iconv(colnames(df),\"",params$enc_guessed,"\",\"UTF-8\")`"))
-cat("\\newline ")
-cat(paste0("`col_names <- sapply(df, is.character)`"))
-cat("\\newline ")
-cat(paste0("`df[ ,col_names] <- sapply(df[, col_names], function(col) iconv(col, \"",params$enc_guessed,"\", \"UTF-8\"))`"))
 ```
 
 ```{r child = 'report_code_common.Rmd', eval=eval_code}

@@ -138,7 +138,6 @@ shinyServer(function(input, output, session) {
   })
   
   
-  
   # Select Variables
   output$selection1 <- renderUI({
     
@@ -243,6 +242,8 @@ shinyServer(function(input, output, session) {
     
       })
       
+      showNotification("Now you can download the report.",duration=10)
+      
     },
     
     error=function(e) {
@@ -257,7 +258,6 @@ shinyServer(function(input, output, session) {
   # Enable downloadbutton 
   observe({
     req(!is.null(report$filepath))
-    showNotification("Now you can download the report.",duration=10)
     session$sendCustomMessage("check_generation", list(check_generation  = 1))
   })
   
@@ -272,7 +272,7 @@ shinyServer(function(input, output, session) {
     content = function(file) {
 
       file.copy(report$filepath, file)
-      
+         
     }
   )
   

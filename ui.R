@@ -20,7 +20,6 @@ shinyUI(fluidPage(
                 
                    }
                 
-                    
                     "))
     ),
 
@@ -131,7 +130,7 @@ shinyUI(fluidPage(
                       
                       radioButtons('rcode', 'Include R Code', c('Yes','No'), inline = TRUE),
                       
-                      h5("Click the button to generate the report:"),
+                      h5("Click the button to generate the report"),
                       
                       actionButton("generate", "", style="
                                     height:145px;
@@ -149,7 +148,7 @@ shinyUI(fluidPage(
                       
                       h3("Download the Report"),
                       
-                      h5("Click the button to download the report:"),
+                      h5("Click the button to download the report"),
                       
                       downloadButton("download", "", style="
                                     height:145px;
