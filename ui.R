@@ -16,7 +16,7 @@ shinyUI(fluidPage(
                     width: 800px;
                     /* Make sure it draws above all Bootstrap components */
                     z-index: 2000;
-                    background-color: #2fa42d;
+                    background-color: #ff9900;
                 
                    }
                 

@@ -4,7 +4,7 @@ author: "Statsomat.com"
 date: "`r format(Sys.time(), '%d %B %Y')`"
 output:
   word_document: 
-    reference_docx: "G:/REYAR/statsomat/Development/Correlations/word_template.docx"
+    reference_docx: "word_template.docx"
 params:
   data: NA
   filename: NA

@@ -118,7 +118,3 @@ if (params$decimal == "auto"){
 
 ```{r child = 'report_code_common.Rmd', eval=eval_code}
 ```
-
-```{r, results="asis", eval=eval_code}
-cat("\n# References", fill=TRUE)
-```

@@ -149,12 +149,17 @@ shinyServer(function(input, output, session) {
   })
   
   
-  # Check upload
-  output$uploadtext <- renderText({
+  # Stop if column names not distinct
+  observe({
     
-    req(datainput(),input$selection1$right)
+    req(input$file, datainput(), input$selection1$right)
     
-    paste("Upload completed without errors. You can continue with the generation of the report.")
+    if (length(unique(input$selection1$right)) != length(input$selection1$right)){
+      
+      showNotification("Error: Column names not distinct. Please update the dataset and restart the app.", duration=10)
+      input$selection1$right <- NULL
+      
+    }
     
   })
   
@@ -202,7 +207,7 @@ shinyServer(function(input, output, session) {
     enc_guessed <- guess_encoding(input$file$datapath)
     enc_guessed_first <- enc_guessed[[1]][1]
     
-    params <- list(data = datainput(), filename=input$file, decimal=input$decimal, enc_guessed = enc_guessed_first, 
+    params <- list(data = datainput(), filename=input$file, fencoding=input$fencoding, decimal=input$decimal, enc_guessed = enc_guessed_first, 
                    vars1 = input$selection1$right)
     
     

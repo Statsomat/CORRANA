@@ -132,7 +132,3 @@ cat(paste0("`df[ ,col_names] <- sapply(df[, col_names], function(col) iconv(col,
 
 ```{r child = 'report_code_common.Rmd', eval=eval_code}
 ```
-
-```{r, results="asis", eval=eval_code}
-cat("\n# References", fill=TRUE)
-```

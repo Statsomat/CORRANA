@@ -61,7 +61,7 @@ df_num <- df_num[,order(colnames(df_num)),drop=FALSE]
 
 }, error=function(e) {
   
-  stop(safeError("Outputs cannot be generated. Please check your data for consistency or try other upload options."))
+  stop(safeError("Outputs cannot be generated. Please check your data for consistency."))
 }
 
 )
@@ -79,9 +79,18 @@ dataname <- params$filename[1]
 kable(dataname, col.names = "File")
 ```
 
-Selection for the decimal character:
+Your selection for the encoding:
 ```{r, results="asis"}
-cat(params$decimal)
+if (params$fencoding=="unknown"){
+  cat("Auto")
+} else {cat("UTF-8")}
+```  
+
+Your selection for the decimal character:
+```{r, results="asis"}
+if (params$decimal=="auto"){
+  cat("Auto")
+} else {cat(params$decimal)}
 ```  
   
 Observations (rows with at least one non-missing value): 
@@ -96,12 +105,16 @@ Variables (columns with at least one non-missing value):
 cat(dim(df)[2])
 ```
 
-Variables treated as numeric and continuous: 
+Variables considered continuous: 
 ```{r, results="asis"}
 if (exists("df_num")){
   if (ncol(df_num)>0){
     rateunique_df <- sapply(df_num, function(col) (length(unique(col)) / nrow(df_num)) >= cutoffcont(nrow(df_num)))
     cat(sum(rateunique_df), fill=TRUE)
+    cont_var <- names(which(rateunique_df == TRUE)) 
+    if (sum(rateunique_df )>0){
+      kable(cont_var, col.names = "Variables considered continuous")
+    }
   } else {cat("0",fill=TRUE)}
 }
 ```
@@ -249,7 +262,6 @@ if (exists("df_num")){
           
           print(kable(colnames(df_num)[c(j,k)],col.names="Column Names"))
       
-
           tryCatch({
             # Define check function for Pearson
             check <- linearity(df_num[,j],df_num[,k])
@@ -603,8 +615,20 @@ if (exists("df_num")){
              # Small linear correlation - maybe other sort of dependence? 
               text <- "Warning: Other measures of dependence besides the classical coefficients of correlation e.g. the Distance Correlation or the Maximal Information Coefficient may indicate a significant relationship between the variables. For more help, please contact the classical statistical consultancy at support@statsomat.com."
               
-              if (check==TRUE){
+              if (check==TRUE & normality(df_num[,j],df_num[,k])==TRUE){
                 if (abs(pcorrelation)<0.2 & output14==FALSE) {
+                  if (dependence(df_num[,j],df_num[,k])==TRUE) {
+                  refs14 <- TRUE
+                  output14 <- TRUE
+                  cat(text, fill=TRUE)
+                  cat("\\newline",fill=TRUE)
+                  }
+                }
+              }
+              
+              
+              if (check==TRUE & normality(df_num[,j],df_num[,k])==FALSE){
+                if (abs(pcorrelation)<0.2 & abs(spcorrelation)<0.2 & abs(ken)<0.2 & output14==FALSE) {
                   if (dependence(df_num[,j],df_num[,k])==TRUE) {
                   refs14 <- TRUE
                   output14 <- TRUE

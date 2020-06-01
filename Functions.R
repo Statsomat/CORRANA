@@ -1,13 +1,15 @@
 # Continuity definition
 cutoffcont <- function(n){
   
-  # Cutoff for continuity f(n)=a*log10(n)+b, f(10)=0.75, f(100)=0.25
+  # Cutoff for continuity f(n)=a*log10(n)+b, f(10)=0.75, f(>=100)=0.25
+  
   b=125
   a=-50
   
   if (n<=100) {  
     cut <- min(1,(a*log10(n)+b)/100)
   } else {
+    # 25 unique values for sample sizes greater than 100
     cut <- 25/n
   }
   return(cut)
@@ -279,7 +281,7 @@ interpret_ken <- function(tau,pvalue){
 # Other dependence 
 dependence <- function(x,y){
   
-  if (length(y) <= 100){
+  if (length(y) <= 80){
     mic<- testforDEP(x,y, test="MIC", rm.na=TRUE, p.opt="MC")
   } else {
     mic<- testforDEP(x,y, test="MIC", rm.na=TRUE, p.opt="table")
