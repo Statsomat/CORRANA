@@ -95,26 +95,39 @@ autocorr <- function(x,y){
 # Check normality 
 normality <- function(x,y){
   
+  data<-data.frame(x,y)
+  data<-data[complete.cases(data),]
+  
   qq1 <- qqnorm(residuals(lm(x~y)),plot=FALSE)
   qq2 <- qqnorm(residuals(lm(y~x)),plot=FALSE)
   qqcor <- min(with(qq1,cor(x,y)),with(qq2,cor(x,y)))
    
   # Shapiro
-  if (length(x) < 5000){
+  if (nrow(data) < 150){
+    if (shapiro.test(x)$p.value > 0.05 & shapiro.test(y)$p.value > 0.05 & qqcor>0.9) {
+      return(TRUE)
+    } else {
+      return(FALSE)
+    }
+  }
+  
+  
+  # Shapiro
+  if (nrow(data)>=150 & nrow(data)<5000){
     if (shapiro.test(x)$p.value > 0.01 & shapiro.test(y)$p.value > 0.01) {
       return(TRUE)
     } else if (qqcor >=0.99){
-        return(TRUE)
+      return(TRUE)
     } else {
       return(FALSE)
     }
   }
   
   # Ad 
-  if (length(x) >= 5000){
+  if (nrow(data)>= 5000){
     if (ad.test(x)$p.value > 0.01 & ad.test(x)$p.value > 0.01) {
       return(TRUE)
-    } else if (qqcor >=0.98){
+    } else if (qqcor >=0.99){
       return(TRUE)
     } else {
       return(FALSE)
@@ -281,15 +294,16 @@ interpret_ken <- function(tau,pvalue){
 # Other dependence 
 dependence <- function(x,y){
   
-  if (length(y) <= 80){
+  data<-data.frame(x,y)
+  data<-data[complete.cases(data),]
+  
+  if (nrow(temp) <= 80){
     mic<- testforDEP(x,y, test="MIC", rm.na=TRUE, p.opt="MC")
   } else {
     mic<- testforDEP(x,y, test="MIC", rm.na=TRUE, p.opt="table")
   }
   
-  temp <- data.frame(x,y)
-  temp2 <- temp[complete.cases(temp),]
-  dist <- dcor.test(temp2[,1],temp2[,2], R=100)
+  dist <- dcor.test(data[,1],data[,2], R=100)
   
   if ((mic@TS>=0.3 & mic@p_value <= 0.05) || (dist$statistic >=0.3 & dist$p.value <= 0.05)){
     return(TRUE)

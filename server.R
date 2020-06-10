@@ -154,9 +154,9 @@ shinyServer(function(input, output, session) {
     
     req(input$file, datainput(), input$selection1$right)
     
-    if (length(unique(input$selection1$right)) != length(input$selection1$right)){
+    if (length(unique(input$selection1$left)) != length(input$selection1$left)){
       
-      showNotification("Error: Column names not distinct. Please update the dataset and restart the app.", duration=10)
+      showNotification("Error in selection: The columns names of the dataset are not distinct. Please rename columns and restart the app.", duration=20)
       input$selection1$right <- NULL
       
     }

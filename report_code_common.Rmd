@@ -41,37 +41,19 @@ if (exists("df_num")){
       
       combs = combn(c(1:(ncol(df_num))),2)
       
-      # Initialize refs as FALSE
-      count_lin <- 0
-      count_interpretp <- 0
-      trace(linearity,tracer=function() {count_lin <<- count_lin + 1},print=FALSE)
-      trace(interpret_p,tracer=function() {count_interpretp <<- count_interpretp + 1},print=FALSE)
-      
-      for (s in 1:16){
-        name2 <- paste("refs",s,sep="")
-        assign(name2,FALSE)
-      }
-      
       # Analysis for each pair 
       for (i in 1:ncol(combs)){
         
         j = combs[1,i]
         k = combs[2,i]
         
-        # Initialize outputs as FALSE
-        for (s in 1:16){
-          name <- paste("output",s,sep="")
-          assign(name,FALSE)
-        }
-        
-        
         # Define rate of unique values to control continuity 
-        rateunique1 <- length(unique(df_num[,j])) / nrow(df_num)
-        rateunique2 <- length(unique(df_num[,k])) / nrow(df_num)
+        rateunique1 <- length(unique(na.omit(df_num[,j]))) / length(na.omit(df_num[,j]))
+        rateunique2 <- length(unique(na.omit(df_num[,k]))) / length(na.omit(df_num[,k]))
         
         
         # Consider bivariate continuous 
-        if (rateunique1 >= cutoffcont(nrow(df_num)) & rateunique2 >= cutoffcont(nrow(df_num))){
+        if (rateunique1 >= cutoffcont(length(na.omit(df_num[,j]))) & rateunique2 >= cutoffcont(length(na.omit(df_num[,k])))){
           
           a <- which(colnames(df2)==colnames(df_num)[j])
           b <- which(colnames(df2)==colnames(df_num)[k])

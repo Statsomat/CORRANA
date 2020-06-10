@@ -19,9 +19,9 @@ df <- df[,params$vars1,drop=FALSE]
 library(MASS) # boxtest
 library(boot) # boot
 library(car) # outlierTest, plots
-library(knitr)
+library(knitr) # kable
 library(nortest) # ad.test
-library(lmtest) # dwtest, bgtest
+library(lmtest) # bgtest
 library(DescTools) # SpearmanRho
 library(testforDEP) # MIC
 library(energy) # dcorr
@@ -109,7 +109,8 @@ Variables considered continuous:
 ```{r, results="asis"}
 if (exists("df_num")){
   if (ncol(df_num)>0){
-    rateunique_df <- sapply(df_num, function(col) (length(unique(col)) / nrow(df_num)) >= cutoffcont(nrow(df_num)))
+    # Do not consider missings
+    rateunique_df <- sapply(df_num, function(col) (length(unique(na.omit(col))) / length(na.omit(col))) >= cutoffcont(length(na.omit(col))))
     cat(sum(rateunique_df), fill=TRUE)
     cont_var <- names(which(rateunique_df == TRUE)) 
     if (sum(rateunique_df )>0){
@@ -177,7 +178,7 @@ if (length(numeric_percent[(numeric_percent>0.9)]) != 0L){
 tryCatch({
   
   if (!exists("df_num") || ncol(df_num)==0L){
-    cat("**Warning: No pairs of continuous variables detected for your data and selected options. No output generated.**", fill=TRUE)
+    cat("**No pairs of continuous variables detected for your data and selected options. No output generated.**", fill=TRUE)
   }
   
   }, error=function(e) {cat("")}
@@ -187,7 +188,7 @@ tryCatch({
 tryCatch({
   
   if (sum(rateunique_df) < 2L || nrow(df_num)<5L){
-    cat("**Warning: No pairs of continuous variables detected or sample size smaller than 5. No output generated.**", fill=TRUE)
+    cat("**No pairs of continuous variables detected or sample size smaller than 5. No output generated.**", fill=TRUE)
   }
   
 }, error=function(e) {cat("")}
@@ -224,7 +225,7 @@ if (exists("df_num")){
     
     combs = combn(c(1:(ncol(df_num))),2)
     
-    # Initialize refs as FALSE
+    # Initialize 
     count_lin <- 0
     count_interpretp <- 0
     count_pearsoncorr <- 0
@@ -253,12 +254,15 @@ if (exists("df_num")){
       
 
       # Define rate of unique values to control continuity 
-      rateunique1 <- length(unique(df_num[,j])) / nrow(df_num)
-      rateunique2 <- length(unique(df_num[,k])) / nrow(df_num)
+      rateunique1 <- length(unique(na.omit(df_num[,j]))) / length(na.omit(df_num[,j]))
+      rateunique2 <- length(unique(na.omit(df_num[,k]))) / length(na.omit(df_num[,k]))
       
       
       # Consider bivariate continuous 
-        if (rateunique1 >= cutoffcont(nrow(df_num)) & rateunique2 >= cutoffcont(nrow(df_num))){
+        if (rateunique1 >= cutoffcont(length(na.omit(df_num[,j]))) & rateunique2 >= cutoffcont(length(na.omit(df_num[,k])))){
+          
+          temp <- data.frame(df_num[,j],df_num[,k])
+          temp2 <- temp[complete.cases(temp),]
           
           print(kable(colnames(df_num)[c(j,k)],col.names="Column Names"))
       
@@ -305,7 +309,7 @@ if (exists("df_num")){
               fisherci <- cor.test(df_num[,j],df_num[,k], method="pearson")
               output2 <- TRUE
               refs2 <- TRUE
-              cat("The Statsomat app assumes no great departure from the normal distribution. Therefore, it computes an asymptotic 95% confidence interval for the Pearson correlation coefficient, based on the Fisher's Z transform: (", round(fisherci$conf.int[1],4),round(fisherci$conf.int[2],4), ").", fill=TRUE)
+              cat("The Statsomat app assumes no great departure from the normal distribution of the variables. Therefore, it computes an asymptotic 95% confidence interval for the Pearson correlation coefficient, based on the Fisher's Z transform: (", round(fisherci$conf.int[1],4),round(fisherci$conf.int[2],4), ").", fill=TRUE)
                 
               if (fisherci$p.value <=0.05) {
                 cat("The statistical test of a zero Pearson correlation coefficient leads to a p-value of:", pformat(fisherci$p.value), ". Therefore, the Pearson correlation coefficient is statistically significant different from 0 at a type I error rate of 5%. ", fill=TRUE)
@@ -327,12 +331,11 @@ if (exists("df_num")){
               # Bootstrap CI
               output3 <- TRUE
               refs3 <- TRUE
-              temp <- data.frame(df_num[,j],df_num[,k])
               bootdata <- boot(temp, statistic=pearsoncorr, R=1000)
               if (length(unique(round(bootdata$t,2)))>1){
                 bootresult <- boot.ci(bootdata, type="bca")
               }
-              cat("The Statsomat app assumes that the data is not normally distributed. Therefore, it computes a 95% confidence interval for the Pearson correlation coefficient based on bootstrapping: (",
+              cat("The Statsomat app assumes that the variables are not normally distributed. Therefore, it computes a 95% confidence interval for the Pearson correlation coefficient based on bootstrapping: (",
                   round(bootresult$bca[4],4),round(bootresult$bca[5],4),").", fill=TRUE)
               
               if (0<round(bootresult$bca[4],4) || round(bootresult$bca[5],4)<0) {
@@ -352,8 +355,8 @@ if (exists("df_num")){
                 cat("\\newline",fill=TRUE)
               }
               
-              if ((nrow(df_num) < 8)) {
-                cat("Warning: The data sample size may be too small for a reliable bootstrap confidence interval.", fill=TRUE)
+              if ((nrow(temp2) < 10)) {
+                cat("Warning: The sample size may be too small for a reliable bootstrap confidence interval.", fill=TRUE)
                 cat("\\newline",fill=TRUE)
                 check_nbci <- TRUE
               }
@@ -366,7 +369,7 @@ if (exists("df_num")){
             if (check==TRUE & normality(df_num[,j],df_num[,k])==FALSE){
               output4 <- TRUE
               refs4 <- TRUE
-              cat("The Statsomat app assumes that the data is not normally distributed. Therefore, it evaluates the association between the variables also by using the Spearman rank correlation coefficient which is estimated to be:",round(spcorrelation,4),". ", fill=TRUE)
+              cat("The Statsomat app assumes that the variables are not normally distributed. Therefore, it evaluates the association between the variables also by using the Spearman rank correlation coefficient which is estimated to be:",round(spcorrelation,4),". ", fill=TRUE)
             }
           }, error=function(e){cat("")}) 
           
@@ -375,7 +378,7 @@ if (exists("df_num")){
             if (check==FALSE & checkm==TRUE) {
               output5 <- TRUE
               refs5 <- TRUE
-              cat("If there is a relationship between the variables, then the Statsomat app assumes that it is best described by a monotonic but not necessarily linear function. In this case the Pearson correlation coefficient may not be the optimal measure of dependency. The association between the variables is evaluated by the Spearman rank correlation coefficient, which is estimated to be: ",round(spcorrelation,4),". ")
+              cat("If there is a relationship between the variables, then the Statsomat app assumes that it is described by a monotonic but not necessarily linear function. In this case the Pearson correlation coefficient may not be the optimal measure of dependency. The association between the variables is evaluated by the Spearman rank correlation coefficient, which is estimated to be: ",round(spcorrelation,4),". ")
             }
           }, error=function(e){cat("")}) 
           
@@ -483,11 +486,9 @@ if (exists("df_num")){
               # Distance correlation
               tryCatch({ 
                 
-                 temp <- data.frame(df_num[,j],df_num[,k])
-                 temp2 <- temp[complete.cases(temp),]
                  dist <- dcor.test(temp2[,1],temp2[,2], R=100)
                  
-                if (dist$p.value > 0.05){ 
+                 if (dist$p.value > 0.05){ 
                   cat("The distance correlation between the variables is ",round(dist$statistic,3),".", fill=TRUE)     
                   cat("The statistical test of a zero distance correlation leads to a p-value of: ",pformat(dist$p.value),". Therefore, the distance correlation is not statistically significant from 0 at a type I error rate of 5%. By using the distance correlation measure, the Statsomat app cannot identify a dependence between the variables. ", fill=TRUE)
                   cat("\\newline",fill=TRUE)
@@ -526,12 +527,12 @@ if (exists("df_num")){
           
           if ((check==TRUE & normality(df_num[,j],df_num[,k])==FALSE & kentest$p.value <= 0.1) || (check==FALSE & checkm==TRUE & kentest$p.value <= 0.1)) {
             
-            if (min(length(unique(df_num[,j])), length(unique(df_num[,k]))) < nrow(df_num)){
+            if (min(length(unique(na.omit(df_num[,j]))), length(unique(na.omit(df_num[,k])))) < nrow(temp2)){
           
               cat("Note: Since there exist ties in the data, the p-values for the Spearman and Kendall's tau hypothesis tests are only approximate. Moreover, in this case the Statsomat app prefers the Kendall's tau to the Spearman hypothesis test. ", fill=TRUE)
               cat("\\newline",fill=TRUE)
             }
-            if ((nrow(df_num) < 800 & kentest$p.value <= 0.1 & spearmanci2$p.value>0.1) || (nrow(df_num) < 800 & kentest$p.value > 0.1 & spearmanci2$p.value<=0.1)){
+            if ((nrow(temp2) < 800 & kentest$p.value <= 0.1 & spearmanci2$p.value>0.1) || (nrow(temp2) < 800 & kentest$p.value > 0.1 & spearmanci2$p.value<=0.1)){
               cat("Note: For this sample size, the Statsomat app prefers the Kendall's tau to the Spearman hypothesis test. ", fill=TRUE)
               cat("\\newline",fill=TRUE)
             }
@@ -656,8 +657,8 @@ if (exists("df_num")){
           
           
           # Sample size warning < 25
-            if (nrow(df_num) < 25) {
-                cat("Warning: The sample size may be too small to guarantee reliable confidence intervals and an acceptable power of the statistical tests implied in the results.", fill=TRUE)
+            if (nrow(temp2) < 25) {
+                cat("Warning: The sample size may be too small to guarantee correct decisions made by the Statsomat app, an acceptable power of the statistical tests and reliable confidence intervals.", fill=TRUE)
                 cat("\\newline",fill=TRUE)
             }
            
