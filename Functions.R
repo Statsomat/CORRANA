@@ -9,8 +9,8 @@ cutoffcont <- function(n){
   if (n<=100) {  
     cut <- min(1,(a*log10(n)+b)/100)
   } else {
-    # 25 unique values for sample sizes greater than 100
-    cut <- 25/n
+    # 20 unique values for sample sizes greater than 100
+    cut <- 20/n
   }
   return(cut)
 }
@@ -202,14 +202,15 @@ interpret_p <- function(rho, pvalue){
         cat("The estimated Pearson correlation coefficient is large in size. ", fill=TRUE)
       }
         
-      cat(round(rho**2*100,1),"% of the variation in one variable may be attributed to the variation in the other variable. ", fill=TRUE) 
       
       if (rho <= -0.1){
+        cat(round(rho**2*100,1),"% of the variation in one variable may be attributed to the variation in the other variable. ", fill=TRUE) 
         cat("There is a linearly decreasing relationship between the variables. If one variables increases in value, then the other one decreases. ")
         cat("\\newline",fill=TRUE)
       } 
       
-      if (rho >= -0.1){
+      if (rho >= 0.1){
+        cat(round(rho**2*100,1),"% of the variation in one variable may be attributed to the variation in the other variable. ", fill=TRUE) 
         cat("There is a linearly increasing relationship between the variables. If one variables increases in value, then the other one increases too. ") 
         cat("\\newline",fill=TRUE)
       }

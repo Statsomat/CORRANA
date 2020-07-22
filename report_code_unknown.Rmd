@@ -25,9 +25,6 @@ header-includes:
 ---
 
 
-**Warning: The automatic computation and interpretation delivered by the Statsomat should not completely replace the classical, made by humans graphical exploratory data analysis and statistical analysis. There may be data cases for which the Statsomat does not deliver the most optimal solution.**
-
-
 ```{r child = 'report_kernel.Rmd'}
 ```
 
@@ -61,10 +58,12 @@ cat("Package energy, version:", paste0(packageVersion("energy")), fill=TRUE)
 cat("\\pagebreak")
 ```
 
+\pagestyle{empty} 
+
 ```{r, results="asis", eval=eval_code}
 cat("\n# R Code ", fill=TRUE)
 cat("\\normalsize\\textcolor{blue}{Instructions\\newline
-We assume that your data is saved here: \"C:\\textbackslash \". Otherwise, you can change the path to your data in the code below. For Windows users, avoid to use paths containing white spaces. If not already available, please install R, RStudio and the requiered packages mentioned on the previous page. Copy the code below, paste it carefully in a new R Script within RStudio and run it. Do not copy and paste the page numbers from the PDF report. If necessary, enlarge the console for a better view of the output. }
+If not already available, please install R, RStudio and the requiered packages listed on the previous page. We assume that your data is stored at this location: \"C:\\textbackslash \". If not, please change the path to your data in the code below. For Windows users, avoid to use paths containing white spaces. Copy the code below, paste it carefully in a new R Script within RStudio and run it. The numerical results will be printed in the Console. The graphs can be accessed in the Plots tab. }
 \\newline")
 ```
 

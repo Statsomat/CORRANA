@@ -25,24 +25,13 @@ header-includes:
 ---
 
 
-**Warning: The automatic computation and interpretation delivered by the Statsomat should not completely replace the classical, made by humans graphical exploratory data analysis and statistical analysis. There may be data cases for which the Statsomat does not deliver the most optimal solution.**
-
 
 ```{r child = 'report_kernel.Rmd'}
 ```
 
 
-```{r, results="asis"}
-# Title 
-tryCatch({
-  
-  if (sum(rateunique_df) >= 2L & nrow(df_num)>=5){
-    cat("\n# References", fill=TRUE)
-  }
-  
-}, error=function(e) {cat("")}
-
-)
+```{r, results="asis", eval=eval2}
+cat("\n# References", fill=TRUE)
 ```
 
 

@@ -152,12 +152,12 @@ shinyServer(function(input, output, session) {
   # Stop if column names not distinct
   observe({
     
-    req(input$file, datainput(), input$selection1$right)
+    req(input$file, datainput())
     
     if (length(unique(input$selection1$left)) != length(input$selection1$left)){
       
-      showNotification("Error in selection: The columns names of the dataset are not distinct. Please rename columns and restart the app.", duration=20)
-      input$selection1$right <- NULL
+      showNotification("Error: The columns names are not distinct. Please use distinct column names and restart the app.", duration=20)
+      stopApp()
       
     }
     
@@ -247,7 +247,7 @@ shinyServer(function(input, output, session) {
     
       })
       
-      showNotification("Now you can download the report.",duration=10)
+      showNotification("Now you can download the report. ",duration=NULL)
       
     },
     

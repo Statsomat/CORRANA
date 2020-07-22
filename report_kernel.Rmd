@@ -10,8 +10,8 @@ knitr::opts_chunk$set(echo = FALSE, comment='', message = FALSE, error = TRUE, w
 ```{r}
 # Get data
 df <- params$data
-df2 <- df
 df <- df[,params$vars1,drop=FALSE]
+df2 <- df
 ```
 
 ```{r}
@@ -27,6 +27,10 @@ library(testforDEP) # MIC
 library(energy) # dcorr
 library(DDoutlier) # Outliers by kNN
 
+# Initialize go for next chunk
+eval <- FALSE
+eval2 <- FALSE
+
 tryCatch({
 
 # Drop columns if all observations are missing 
@@ -41,10 +45,6 @@ if (length(which(rowSums(rowsums) == dim(df)[2])) != 0L){
   df <- df[-rows_drop, ,drop=FALSE]
 }
 
-# Drop character variables with more than 10 categories, NAs included 
-# cols_catlarge <- sapply(df, function(col) is.character(col) & length(unique(col)) >10)
-# df[,cols_catlarge] <- list(NULL)
-
 # Convert logical variables to character
 cols_logical <- sapply(df, function(col) is.logical(col))
 df[ ,cols_logical] <- sapply(df[ ,cols_logical], as.character)
@@ -56,12 +56,21 @@ df[ ,col_names_numeric] <- sapply(df[ ,col_names_numeric], as.character)
 # Extract numerical variables    
 df_num <- df[which(sapply(df, is.numeric) == 1L)]
 
+# Extract continuous variables
+if (ncol(df_num)>0){
+  rateunique_df <- sapply(df_num, function(col) (length(unique(na.omit(col))) / length(na.omit(col))) >= cutoffcont(length(na.omit(col))))
+  cols_continuous <- names(which(rateunique_df == TRUE))
+} else {rateunique_df<-FALSE}
+
 # Reorder numerical variables alphabetically 
 df_num <- df_num[,order(colnames(df_num)),drop=FALSE]
 
+# Initialize next computations
+eval <- TRUE
+
 }, error=function(e) {
   
-  stop(safeError("Outputs cannot be generated. Please check your data for consistency."))
+  stop(safeError("The data is not suitable for this app. Please revise your data. "))
 }
 
 )
@@ -69,148 +78,115 @@ df_num <- df_num[,order(colnames(df_num)),drop=FALSE]
 ```
 
 
-# Basic Information
-
-\small
-Automatic statistics for the file:
-```{r, results="asis"}
-# Basic information
+```{r, results="asis", eval=eval}
+# Chunk with first page of basic information
+cat("**Warning: The automatic computation and interpretation delivered by the Statsomat should not completely replace the classical, made by humans graphical exploratory data analysis and statistical analysis. There may be data cases for which the Statsomat does not deliver the most optimal solution.**", fill=TRUE)
+cat("\\newline",fill=TRUE) 
+cat("\n# Basic Information", fill=TRUE)
+cat("Automatic statistics for the file:", fill=TRUE)
 dataname <- params$filename[1]
 kable(dataname, col.names = "File")
-```
 
-Your selection for the encoding:
-```{r, results="asis"}
+cat("Your selection for the encoding:", fill=TRUE)
 if (params$fencoding=="unknown"){
   cat("Auto")
 } else {cat("UTF-8")}
-```  
+cat("\\newline",fill=TRUE) 
 
-Your selection for the decimal character:
-```{r, results="asis"}
+cat("Your selection for the decimal character:", fill=TRUE)
 if (params$decimal=="auto"){
   cat("Auto")
 } else {cat(params$decimal)}
-```  
+cat("\\newline",fill=TRUE) 
   
-Observations (rows with at least one non-missing value): 
-```{r, results="asis"}
-# Basic information
+cat("Observations (rows with at least one non-missing value): ", fill=TRUE)
 cat(dim(df)[1])
-```
+cat("\\newline",fill=TRUE) 
 
-Variables (columns with at least one non-missing value): 
-```{r, results="asis"}
-# Basic information
-cat(dim(df)[2])
-```
-
-Variables considered continuous: 
-```{r, results="asis"}
-if (exists("df_num")){
-  if (ncol(df_num)>0){
-    # Do not consider missings
-    rateunique_df <- sapply(df_num, function(col) (length(unique(na.omit(col))) / length(na.omit(col))) >= cutoffcont(length(na.omit(col))))
-    cat(sum(rateunique_df), fill=TRUE)
-    cont_var <- names(which(rateunique_df == TRUE)) 
-    if (sum(rateunique_df )>0){
-      kable(cont_var, col.names = "Variables considered continuous")
-    }
-  } else {cat("0",fill=TRUE)}
+# Missing rows
+if (exists("length_non_complete")){
+  cat("Number of rows that are dropped because they contain no values (all values are missing):", length_non_complete)
+  cat("\\newline",fill=TRUE) 
 }
-```
 
-```{r, results="asis"}
+cat("Variables (columns with at least one non-missing value): ", fill=TRUE)
+cat(dim(df)[2])
+cat("\\newline",fill=TRUE) 
+
+# Missing columns
 if (exists("col_names_missing")){
   if (sum(col_names_missing) != 0L){
-    cat("\n\n\\small Number of columns that are dropped because they contain no values (all values are missing):", sum(col_names_missing))
+    cat("Number of columns that are dropped because they contain no values (all values are missing):", sum(col_names_missing))
+    cat("\\newline",fill=TRUE) 
   } 
 }
-```
 
-```{r, results="asis"}
-if (exists("length_non_complete")){
-  cat("\n\n\\small Number of rows that are dropped because they contain no values (all values are missing):", length_non_complete)
+cat("Variables considered continuous: ", fill=TRUE)
+if (exists("df_num")){
+  if (ncol(df_num)>0){
+    if (sum(rateunique_df)>0){
+      cat(sum(rateunique_df==TRUE),fill=TRUE)
+      kable(cols_continuous, col.names = "Variables considered continuous")
+    }} else {
+    
+    cat("0",fill=TRUE)
+    cat("\\newline",fill=TRUE) }
 }
-```
 
-```{r, results="asis", eval=FALSE}
-if (exists("cols_catlarge")){
-  if (sum(cols_catlarge) != 0L){
-    cat("\n\n\\small Character columns with more than 10 unique values which are not evaluated in this app:") 
-    cols <- names(which(cols_catlarge==1))
-    kable(cols, col.names = "Column Names")
-  }
-}
-```
 
-```{r, results="asis"}
 # Missings more than 50%
-complete_rate <- sapply(df, function(col) 1-(sum(is.na(col)) / dim(df)[1])) 
-if (length(which(complete_rate < 0.5)) != 0L){
-  cat("**Warning: These variables have more than 50% missing values:**")
-  miss_var <- names(which(complete_rate < 0.5)) 
-  kable(miss_var, col.names = "Variable")
-}
-```
+# Go for next chunk
+if (sum(rateunique_df )>=2L && nrow(df_num)>=5){
 
-```{r, results="asis"}
-# Numeric falsly to char? 
-check_reading <- function(col){
-  numeric <- !is.na(as.numeric(col))
-  return(sum(numeric)/sum(!is.na(col)))
-}
-
-df3 <- df2
-col_names_missing <- sapply(df3, function(col) all(is.na(col)))
-df3[ ,col_names_missing] <- list(NULL)
-df_char <- df[which(sapply(df3, is.character) == 1L)]
-numeric_percent <- sapply(df_char, function(col) check_reading(col))
-
-if (length(numeric_percent[(numeric_percent>0.9)]) != 0L){
-  cat("**Warning: More than 90% of the values of these columns could be treated as numeric. Nevertheless, because of some values or the selected decimal character, the columns must be treated as discrete. Are all the values plausible? Please check your data once more before uploading! Column(s):**", names(numeric_percent[(numeric_percent>0.9)]),fill=TRUE)
-}
-```
-
-
-```{r, results="asis"}
-# Title 
-tryCatch({
-  
-  if (!exists("df_num") || ncol(df_num)==0L){
-    cat("**No pairs of continuous variables detected for your data and selected options. No output generated.**", fill=TRUE)
+  complete_rate <- sapply(rateunique_df, function(col) 1-(sum(is.na(col)) / dim(df)[1])) 
+  if (length(which(complete_rate < 0.5)) != 0L){
+    cat("**Warning: These continuous variables have more than 50% missing values:**")
+    miss_var <- names(which(complete_rate < 0.5)) 
+    kable(miss_var, col.names = "Variable")
   }
   
-  }, error=function(e) {cat("")}
+  # Go for next chunk
+  eval2 <- TRUE
+} 
 
-)
 
-tryCatch({
+# Numeric falsly to char? Print only if n>=5 
+if (nrow(df_num)>=5){ 
   
-  if (sum(rateunique_df) < 2L || nrow(df_num)<5L){
-    cat("**No pairs of continuous variables detected or sample size smaller than 5. No output generated.**", fill=TRUE)
+  check_reading <- function(col){
+    numeric <- !is.na(as.numeric(col))
+    return(sum(numeric)/sum(!is.na(col)))
   }
   
-}, error=function(e) {cat("")}
+  col_names_missing <- sapply(df2, function(col) all(is.na(col)))
+  df2[ ,col_names_missing] <- list(NULL)
+  df_char <- df[which(sapply(df2, is.character) == 1L)]
+  numeric_percent <- sapply(df_char, function(col) check_reading(col))
+  
+  if (length(numeric_percent[(numeric_percent>0.9)]) != 0L){
+    cat("**Warning: More than 90% of the values of these columns could be treated as numeric. Because of some few values, the columns must be treated as discrete. Are all the values plausible? Please revise your data. Make sure you have used the correct decimal character and only blanks as missing values. Column(s):**" )
+     charfalse <- names(numeric_percent[(numeric_percent>0.9)])
+     kable(charfalse, col.names = "Variable")
+  }
 
-)
+}
 
+```
+
+
+```{r, results="asis", eval=eval}
+if (eval2==FALSE){
+  cat("**No pairs of continuous variables detected or sample size smaller than 5. No output generated.**", fill=TRUE)
+}
 ```
 
 \pagebreak
 
-```{r, results="asis"}
+```{r, results="asis", eval=eval2}
 # Title 
-tryCatch({
-  
-  if (sum(rateunique_df) >= 2L & nrow(df_num)>=5){
-    cat("\n# Results for continuous vs continuous pairs", fill=TRUE)
-    cat("(ordered alphabetically)", fill=TRUE)
-    output_num <- TRUE
-  }}, error=function(e) {cat("")}
-
-)
-
+cat("# Results for continuous vs continuous pairs", fill=TRUE)
+cat("(ordered alphabetically)", fill=TRUE)
+cat("\\newline ")
 ```
 
 ```{r, results="asis", dev="cairo_pdf"}
@@ -245,6 +221,7 @@ if (exists("df_num")){
     
       j = combs[1,i]
       k = combs[2,i]
+
       
        # Initialize outputs as FALSE
       for (s in 1:16){
@@ -264,18 +241,19 @@ if (exists("df_num")){
           temp <- data.frame(df_num[,j],df_num[,k])
           temp2 <- temp[complete.cases(temp),]
           
+          cat("Variable pair: ")
           print(kable(colnames(df_num)[c(j,k)],col.names="Column Names"))
       
           tryCatch({
             # Define check function for Pearson
             check <- linearity(df_num[,j],df_num[,k])
-          }, error=function(e){cat("Error. This data pair cannot be analyzed. ", fill=TRUE)})     
-          
+          }, error=function(e){cat("Error. This data pair cannot be analyzed by this app. ", fill=TRUE)})     
+         
           
           tryCatch({
             # Define check function for Spearman & Kendall 
             checkm <- linearity(rank(df_num[,j]),rank(df_num[,k]))
-          }, error=function(e){cat("Error. This data pair cannot be analyzed. ", fill=TRUE)})    
+          }, error=function(e){cat("", fill=TRUE)})    
           
           
           tryCatch({
@@ -298,7 +276,7 @@ if (exists("df_num")){
             if (check==TRUE) {
               output1 <- TRUE
               refs1 <- TRUE
-              cat("If there is a relationship between the variables, then the Statsomat app assumes that it is linear. Therefore, the dependence between the variables is quantified by the Pearson correlation coefficient which is estimated to be:",round(pcorrelation,4),".", fill=TRUE)
+              cat("The relationship between the variables could be linear. Therefore, the dependence between the variables is quantified by the Pearson correlation coefficient which is estimated to be:",round(pcorrelation,4),".", fill=TRUE)
             }
           }, error=function(e){cat("")}) 
           
@@ -378,7 +356,7 @@ if (exists("df_num")){
             if (check==FALSE & checkm==TRUE) {
               output5 <- TRUE
               refs5 <- TRUE
-              cat("If there is a relationship between the variables, then the Statsomat app assumes that it is described by a monotonic but not necessarily linear function. In this case the Pearson correlation coefficient may not be the optimal measure of dependency. The association between the variables is evaluated by the Spearman rank correlation coefficient, which is estimated to be: ",round(spcorrelation,4),". ")
+              cat("The relationship between the variables could be monotonic but not necessarily linear. In this case the Pearson correlation coefficient may not be the optimal measure of dependency. The association between the variables is evaluated by the Spearman rank correlation coefficient, which is estimated to be: ",round(spcorrelation,4),". ")
             }
           }, error=function(e){cat("")}) 
           
@@ -391,7 +369,7 @@ if (exists("df_num")){
               spearmanci <- SpearmanRho(df_num[,j],df_num[,k], use="complete.obs", conf.level=0.95)
               spearmanci2 <- cor.test(df_num[,j],df_num[,k], method="spearman", exact=TRUE)
               
-              if (exists("spearmanci")){
+              if (exists("spearmanci") && !is.nan(spearmanci[2]) && !is.nan(spearmanci[3])) {
                 cat("An asymptotic 95% confidence interval for the Spearman rank correlation coefficient based on the Fisher's Z transform is: (", round(spearmanci[2],4),round(spearmanci[3],4), ").", fill=TRUE)
               }
               
