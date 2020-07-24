@@ -1,8 +1,0 @@
----
-title: "Correlation and Association"
----
-
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = FALSE, comment='', message = FALSE, error = TRUE, warning=FALSE, fig.width=8)
-```
-

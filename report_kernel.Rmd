@@ -10,6 +10,7 @@ knitr::opts_chunk$set(echo = FALSE, comment='', message = FALSE, error = TRUE, w
 ```{r}
 # Get data
 df <- params$data
+#setdiff(colnames(df),params$vars1)
 df <- df[,params$vars1,drop=FALSE]
 df2 <- df
 ```
@@ -56,14 +57,15 @@ df[ ,col_names_numeric] <- sapply(df[ ,col_names_numeric], as.character)
 # Extract numerical variables    
 df_num <- df[which(sapply(df, is.numeric) == 1L)]
 
+# Reorder numerical variables alphabetically 
+df_num <- df_num[,order(colnames(df_num)),drop=FALSE]
+
 # Extract continuous variables
 if (ncol(df_num)>0){
   rateunique_df <- sapply(df_num, function(col) (length(unique(na.omit(col))) / length(na.omit(col))) >= cutoffcont(length(na.omit(col))))
   cols_continuous <- names(which(rateunique_df == TRUE))
 } else {rateunique_df<-FALSE}
 
-# Reorder numerical variables alphabetically 
-df_num <- df_num[,order(colnames(df_num)),drop=FALSE]
 
 # Initialize next computations
 eval <- TRUE
@@ -78,7 +80,7 @@ eval <- TRUE
 ```
 
 
-```{r, results="asis", eval=eval}
+```{r, results="asis"}
 # Chunk with first page of basic information
 cat("**Warning: The automatic computation and interpretation delivered by the Statsomat should not completely replace the classical, made by humans graphical exploratory data analysis and statistical analysis. There may be data cases for which the Statsomat does not deliver the most optimal solution.**", fill=TRUE)
 cat("\\newline",fill=TRUE) 
@@ -123,14 +125,13 @@ if (exists("col_names_missing")){
 
 cat("Variables considered continuous: ", fill=TRUE)
 if (exists("df_num")){
-  if (ncol(df_num)>0){
-    if (sum(rateunique_df)>0){
-      cat(sum(rateunique_df==TRUE),fill=TRUE)
-      kable(cols_continuous, col.names = "Variables considered continuous")
-    }} else {
-    
-    cat("0",fill=TRUE)
-    cat("\\newline",fill=TRUE) }
+  if (sum(rateunique_df)>0){
+    cat(sum(rateunique_df==TRUE),fill=TRUE)
+    kable(cols_continuous, col.names = "Variables considered continuous")
+  } else {
+  
+  cat("0",fill=TRUE)
+  cat("\\newline",fill=TRUE) }
 }
 
 
@@ -238,8 +239,11 @@ if (exists("df_num")){
       # Consider bivariate continuous 
         if (rateunique1 >= cutoffcont(length(na.omit(df_num[,j]))) & rateunique2 >= cutoffcont(length(na.omit(df_num[,k])))){
           
+          
+          # Define working datasets 
           temp <- data.frame(df_num[,j],df_num[,k])
           temp2 <- temp[complete.cases(temp),]
+          temp3 <- unique(temp2)
           
           cat("Variable pair: ")
           print(kable(colnames(df_num)[c(j,k)],col.names="Column Names"))
@@ -305,7 +309,7 @@ if (exists("df_num")){
           
           
           tryCatch({  
-            if (check==TRUE & normality(df_num[,j],df_num[,k])==FALSE & nrow(df_num) < 800) {
+            if (check==TRUE & normality(df_num[,j],df_num[,k])==FALSE & nrow(temp3) < 800) {
               # Bootstrap CI
               output3 <- TRUE
               refs3 <- TRUE
@@ -333,8 +337,8 @@ if (exists("df_num")){
                 cat("\\newline",fill=TRUE)
               }
               
-              if ((nrow(temp2) < 10)) {
-                cat("Warning: The sample size may be too small for a reliable bootstrap confidence interval.", fill=TRUE)
+              if ((nrow(temp3) < 10)) {
+                cat("Warning: The sample size could be too small for a reliable bootstrap confidence interval.", fill=TRUE)
                 cat("\\newline",fill=TRUE)
                 check_nbci <- TRUE
               }
@@ -429,7 +433,7 @@ if (exists("df_num")){
               refs9 <- TRUE  
               # MIC
               tryCatch({ 
-                if (nrow(df_num) <= 100){
+                if (nrow(temp2) <= 100){
                   mic <- testforDEP(df_num[,j],df_num[,k], test="MIC", rm.na=TRUE, p.opt="MC")
                 } else {mic <- testforDEP(df_num[,j],df_num[,k], test="MIC", rm.na=TRUE, p.opt="table")}
   
@@ -453,7 +457,7 @@ if (exists("df_num")){
                     cat("Nevertheless, the size of the MIC is very small and may have no practical importance. ", fill=TRUE)
                   }
                   cat("\\newline",fill=TRUE)
-                  cat("Background: The Maximal Information Coefficient is related to the relationship strenght and it can be interpreted as a correlation measure. It is symmetric and it ranges in [0,1], where it tends to 0 for statistically independent data and it approaches 1 in probability for noiseless functional relationships. ", fill=TRUE)
+                  cat("Background: The Maximal Information Coefficient is related to the relationship strength and it can be interpreted as a correlation measure. It is symmetric and it ranges in [0,1], where it tends to 0 for statistically independent data and it approaches 1 in probability for noiseless functional relationships. ", fill=TRUE)
                   cat("\\newline",fill=TRUE)
                 }
                  output10 <- TRUE
@@ -510,8 +514,8 @@ if (exists("df_num")){
               cat("Note: Since there exist ties in the data, the p-values for the Spearman and Kendall's tau hypothesis tests are only approximate. Moreover, in this case the Statsomat app prefers the Kendall's tau to the Spearman hypothesis test. ", fill=TRUE)
               cat("\\newline",fill=TRUE)
             }
-            if ((nrow(temp2) < 800 & kentest$p.value <= 0.1 & spearmanci2$p.value>0.1) || (nrow(temp2) < 800 & kentest$p.value > 0.1 & spearmanci2$p.value<=0.1)){
-              cat("Note: For this sample size, the Statsomat app prefers the Kendall's tau to the Spearman hypothesis test. ", fill=TRUE)
+            if ((nrow(temp3) < 800 & kentest$p.value <= 0.1 & spearmanci2$p.value>0.1) || (nrow(temp3) < 800 & kentest$p.value > 0.1 & spearmanci2$p.value<=0.1)){
+              cat("Note: For this sample size, the Statsomat app prefers the Kendall's tau instead of the Spearman hypothesis test. ", fill=TRUE)
               cat("\\newline",fill=TRUE)
             }
           }
@@ -531,12 +535,12 @@ if (exists("df_num")){
             # Outlier if Bonferroni p < 0.01
             if (check==TRUE) {
               
-              if (normality2(residuals(lm(df_num[,k] ~ df_num[,j])))==TRUE){
+              if (normality2(df_num[,k],df_num[,j])==TRUE){
                 outliers <- outlierTest(lm(df_num[,k] ~ df_num[,j]))
                 outliers_sign <- outliers$bonf.p[outliers$bonf.p<0.01]
               }
               
-              if (normality2(residuals(lm(df_num[,j] ~ df_num[,k])))==TRUE){
+             if (normality2(df_num[,j],df_num[,k])==TRUE){
                 outliers2 <- outlierTest(lm(df_num[,j] ~ df_num[,k]))
                 outliers_sign2 <- outliers2$bonf.p[outliers2$bonf.p<0.01]
               }
@@ -592,7 +596,7 @@ if (exists("df_num")){
           
           tryCatch({ 
              # Small linear correlation - maybe other sort of dependence? 
-              text <- "Warning: Other measures of dependence besides the classical coefficients of correlation e.g. the Distance Correlation or the Maximal Information Coefficient may indicate a significant relationship between the variables. For more help, please contact the classical statistical consultancy at support@statsomat.com."
+              text <- "Warning: Other measures of dependence besides the classical coefficients of correlation e.g. the Distance Correlation or the Maximal Information Coefficient could indicate a significant relationship between the variables. For more help, please contact the classical statistical consultancy at support@statsomat.com."
               
               if (check==TRUE & normality(df_num[,j],df_num[,k])==TRUE){
                 if (abs(pcorrelation)<0.2 & output14==FALSE) {
@@ -635,8 +639,8 @@ if (exists("df_num")){
           
           
           # Sample size warning < 25
-            if (nrow(temp2) < 25) {
-                cat("Warning: The sample size may be too small to guarantee correct decisions made by the Statsomat app, an acceptable power of the statistical tests and reliable confidence intervals.", fill=TRUE)
+            if (nrow(temp3) < 25) {
+                cat("Warning: The available sample size for this data pair could be too small for an acceptable power of the statistical tests, reliable confidence intervals and for a valid interpretation of the results.", fill=TRUE)
                 cat("\\newline",fill=TRUE)
             }
            
@@ -686,27 +690,11 @@ tryCatch({
     }
     
     
-    if (nrow(df_num)<5000){
-      if ((refs2==TRUE || refs3==TRUE || refs4==TRUE)){
-        cat("The assumption of normality was checked by using the Shapiro-Wilk normality test with the shapiro.test function.", fill=TRUE)
-        cat("\\newline",fill=TRUE)
-      }
+    if ((refs2==TRUE || refs3==TRUE || refs4==TRUE)){
+      cat("Depending on the sample size, the assumption of normality was checked by using either the Shapiro-Wilk normality test with the shapiro.test function or the package nortest [@nortest] and the Anderson-Darling normality with the ad.test function..", fill=TRUE)
+      cat("\\newline",fill=TRUE)
     }
     
-    
-    if (nrow(df_num)>=5000){
-      if ((refs2==TRUE || refs3==TRUE || refs4==TRUE)){
-        cat("The assumption of normality was checked by using the package nortest [@nortest] and the Anderson-Darling normality with the ad.test function.", fill=TRUE)
-        cat("\\newline",fill=TRUE)
-      }
-    }
-    
-    
-    if (refs13==TRUE){
-      # Breusch-Godfrey Test
-     # cat("An auxiliary check of serial correlation was done using the lmtest package [@lmtest] and the Breusch-Godfrey test with the # the bgtest function.", fill=TRUE)
-    #  cat("\\newline",fill=TRUE)
-    }
     
     
     if (refs1==TRUE){
@@ -781,13 +769,7 @@ tryCatch({
       cat("Univariate distribution fits are displayed on the main diagonal. The fitted linear regression line is added to the scatterplots.")
       cat("\\newline",fill=TRUE)
     }
-    
-    if (exists("count_lin")){
-      if (count_lin>0) {
-      cat("Preliminary assumptions used by the Statsomat app are based on statistical hypothesis tests performed at a 1%-5% type I error rate and calibrated with other test-specific rules. ", fill=TRUE)
-      cat("\\newline",fill=TRUE)
-      }
-    }
+
     
     if (refs14==TRUE){
       cat("Note: There are variable pairs for which classical coefficients of correlation are small in absolute value but other measures of dependency, e.g. the Maximal Information Coefficient or the Distance Correlation could reveal a significant dependence relationship. For more help please contact the classical statistical consultancy at support@statsomat.com.", fill=TRUE)

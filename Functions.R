@@ -7,7 +7,7 @@ cutoffcont <- function(n){
   a=-50
   
   if (n<=100) {  
-    cut <- min(1,(a*log10(n)+b)/100)
+    cut <- min(1,round((a*log10(n)+b)/100,2))
   } else {
     # 20 unique values for sample sizes greater than 100
     cut <- 20/n
@@ -21,13 +21,16 @@ knnoutlier <- function(x,y){
   # Compute outliers by knn proximity based method, liberal 
   data<-data.frame(x,y)
   data<-data[complete.cases(data),]
-  outliers_scores <- LOOP(data, k=5, lambda=3)
-  outliers <- outliers_scores[which(outliers_scores>0.90)]
   
-  if (length(outliers>0))
-    
-    return(TRUE)
-    
+  if (nrow(data)>5){
+    outliers_scores <- LOOP(data, k=5, lambda=3)
+    outliers <- outliers_scores[which(outliers_scores>0.98)]
+    if (length(outliers>0)){
+      return(TRUE)
+    } else {
+      return(FALSE)}
+  } else
+      return(FALSE)
 } 
 
 
@@ -37,12 +40,22 @@ linearity <- function(x,y){
   # Compute outliers by knn proximity based method, liberal 
   data<-data.frame(x,y)
   data<-data[complete.cases(data),]
-  outliers_scores <- LOOP(data, k=5, lambda=3)
-  outliers <- outliers_scores[which(outliers_scores>0.90)]
   
-  if (length(outliers>0)){
-    dataclean <- data[-outliers, ]
-  } else dataclean<-data
+  if (nrow(data)>5){
+    outliers_scores <- LOOP(data, k=5, lambda=3)
+    outliers <- outliers_scores[which(outliers_scores>0.90)]
+    
+    if (length(outliers>0)){
+      dataclean <- data[-outliers, ]
+    } else {
+      
+      dataclean <-data}
+    
+  } else {
+    
+    dataclean <-data
+    
+  }
   
   xclean<-dataclean[,1]
   yclean<-dataclean[,2]
@@ -83,7 +96,10 @@ autocorr <- function(x,y){
   bg1 <- bgtest(x~y, order=2)
   bg2 <- bgtest(y~x, order=2)
   
-  r2 <- min(bg1$statistic/length(y),bg2$statistic/length(y))
+  data<-data.frame(x,y)
+  data<-data[complete.cases(data),]
+  
+  r2 <- min(bg1$statistic/nrow(data),bg2$statistic/nrow(data))
   
   if (bg1$p.value > 0.01 & bg2$p.value > 0.01) {
     return(TRUE)
@@ -95,16 +111,19 @@ autocorr <- function(x,y){
 # Check normality 
 normality <- function(x,y){
   
-  data<-data.frame(x,y)
-  data<-data[complete.cases(data),]
-  
+
   qq1 <- qqnorm(residuals(lm(x~y)),plot=FALSE)
   qq2 <- qqnorm(residuals(lm(y~x)),plot=FALSE)
   qqcor <- min(with(qq1,cor(x,y)),with(qq2,cor(x,y)))
+  
+  
+  x <- x[complete.cases(x)]
+  y <- y[complete.cases(y)]
+  
    
   # Shapiro
-  if (nrow(data) < 150){
-    if (shapiro.test(x)$p.value > 0.05 & shapiro.test(y)$p.value > 0.05 & qqcor>0.9) {
+  if (max(length(x),length(y)) < 150){
+    if (shapiro.test(x)$p.value > 0.05 && shapiro.test(y)$p.value > 0.05 & qqcor>0.9) {
       return(TRUE)
     } else {
       return(FALSE)
@@ -113,8 +132,8 @@ normality <- function(x,y){
   
   
   # Shapiro
-  if (nrow(data)>=150 & nrow(data)<5000){
-    if (shapiro.test(x)$p.value > 0.01 & shapiro.test(y)$p.value > 0.01) {
+  if (max(length(x),length(y))>=150 && max(length(x),length(y))<5000){
+    if (shapiro.test(x)$p.value > 0.01 && shapiro.test(y)$p.value > 0.01) {
       return(TRUE)
     } else if (qqcor >=0.99){
       return(TRUE)
@@ -124,10 +143,10 @@ normality <- function(x,y){
   }
   
   # Ad 
-  if (nrow(data)>= 5000){
-    if (ad.test(x)$p.value > 0.01 & ad.test(x)$p.value > 0.01) {
+  if (max(length(x),length(y)) >= 5000){
+    if (ad.test(x)$p.value > 0.01 && ad.test(y)$p.value > 0.01) {
       return(TRUE)
-    } else if (qqcor >=0.99){
+    } else if (qqcor >=0.98){
       return(TRUE)
     } else {
       return(FALSE)
@@ -135,12 +154,16 @@ normality <- function(x,y){
   }
 }
 
-normality2 <- function(r){
+normality2 <- function(x,y){
   
-  qq <- qqnorm(r,plot=FALSE)
+  qq <- qqnorm(residuals(lm(x~y)),plot=FALSE)
   qqcor <- with(qq,cor(x,y))
   
   # Shapiro
+  
+  r <- residuals(lm(x~y))
+  r <- r[complete.cases(r)]
+  
   if (length(r) < 5000){
     if (shapiro.test(r)$p.value > 0.01) {
       return(TRUE)
@@ -298,7 +321,7 @@ dependence <- function(x,y){
   data<-data.frame(x,y)
   data<-data[complete.cases(data),]
   
-  if (nrow(temp) <= 80){
+  if (nrow(data) <= 100){
     mic<- testforDEP(x,y, test="MIC", rm.na=TRUE, p.opt="MC")
   } else {
     mic<- testforDEP(x,y, test="MIC", rm.na=TRUE, p.opt="table")
@@ -306,7 +329,7 @@ dependence <- function(x,y){
   
   dist <- dcor.test(data[,1],data[,2], R=100)
   
-  if ((mic@TS>=0.3 & mic@p_value <= 0.05) || (dist$statistic >=0.3 & dist$p.value <= 0.05)){
+  if ((mic@TS>=0.3 & mic@p_value <= 0.1) || (dist$statistic >=0.3 & dist$p.value <= 0.1)){
     return(TRUE)
   } else {return(FALSE)}
   

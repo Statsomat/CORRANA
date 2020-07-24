@@ -68,7 +68,6 @@ shinyUI(fluidPage(
       
       column(6, 
              
-             wellPanel(style = "background: #fff;", includeHTML("www/Description.html")),  
              wellPanel(style = "background: #fff;", includeHTML("www/Instructions.html"))
              
       ),

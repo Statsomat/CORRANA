@@ -55,6 +55,11 @@ if (exists("df_num")){
         # Consider bivariate continuous 
         if (rateunique1 >= cutoffcont(length(na.omit(df_num[,j]))) & rateunique2 >= cutoffcont(length(na.omit(df_num[,k])))){
           
+          # Define working datasets 
+          temp <- data.frame(df_num[,j],df_num[,k])
+          temp2 <- temp[complete.cases(temp),]
+          temp3 <- unique(temp2)
+          
           a <- which(colnames(df2)==colnames(df_num)[j])
           b <- which(colnames(df2)==colnames(df_num)[k])
           
@@ -121,7 +126,7 @@ if (exists("df_num")){
           
           
           tryCatch({  
-            if (check==TRUE & normality(df_num[,j],df_num[,k])==FALSE & nrow(df_num) < 800) {
+            if (check==TRUE & normality(df_num[,j],df_num[,k])==FALSE & nrow(temp3) < 800) {
               temp <- data.frame(df_num[,j],df_num[,k])
               bootdata <- boot(temp, statistic=pearsoncorr, R=1000)
               if (length(unique(round(bootdata$t,2)))>1){
@@ -208,15 +213,28 @@ if (exists("df_num")){
              
               tryCatch({ 
                 
-                if (nrow(df_num) <= 100){
+                if (nrow(temp2) <= 100){
+                  
                   mic <- testforDEP(df_num[,j],df_num[,k], test="MIC", rm.na=TRUE, p.opt="MC")
-                } else {mic <- testforDEP(df_num[,j],df_num[,k], test="MIC", rm.na=TRUE, p.opt="table")}
+
+                  cat("\\newline ")
+                  cat("`mic <- testforDEP(df[,j],df[,k], test=\"MIC\", rm.na=TRUE, p.opt=\"MC\")`")
+                  cat("\\newline ")
+                  cat("`micval <- minerva::mine(df[,j],df[,k], na.rm=TRUE)$MIC`")
+                  cat("\\newline ")
+                  cat("`round(micval,3)`     # `Maximal Information Coefficient (MIC)`")
+                  cat("\\newline ")
+                  cat("`pformat(mic@p_value)` # `p-value MIC`")
+                  cat("\\newline ")
+                  cat("\\newline ")
+
+                  
+                } else {
+                  
+                mic <- testforDEP(df_num[,j],df_num[,k], test="MIC", rm.na=TRUE, p.opt="table")
   
-                cat("`if (nrow(df) <= 100){`")
                 cat("\\newline ")
-                cat("`mic <- testforDEP(df[,j],df[,k], test=\"MIC\", rm.na=TRUE, p.opt=\"MC\")`")
-                cat("\\newline ")
-                cat("`} else {mic <- testforDEP(df[,j],df[,k], test=\"MIC\", rm.na=TRUE, p.opt=\"table\")}`")
+                cat("`mic <- testforDEP(df[,j],df[,k], test=\"MIC\", rm.na=TRUE, p.opt=\"table\")`")
                 cat("\\newline ")
                 cat("`micval <- minerva::mine(df[,j],df[,k], na.rm=TRUE)$MIC`")
                 cat("\\newline ")
@@ -225,14 +243,13 @@ if (exists("df_num")){
                 cat("`pformat(mic@p_value)` # `p-value MIC`")
                 cat("\\newline ")
                 cat("\\newline ")
-              
+                
+                }
               }, error=function(e){cat("")}
               ) 
               
               tryCatch({ 
                 
-                 temp <- data.frame(df_num[,j],df_num[,k])
-                 temp2 <- temp[complete.cases(temp),]
                  dist <- dcor.test(temp2[,1],temp2[,2], R=100)
                  
                  cat("`temp <- data.frame(df[,j],df[,k])`")

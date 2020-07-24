@@ -32,15 +32,15 @@ shinyServer(function(input, output, session) {
       
       validate(need(tryCatch(datainput1 <- fread(input$file$datapath, header = "auto", sep="auto", dec=".", encoding = "unknown", 
                                            data.table = FALSE, na.strings = ""), warning=function(w) {}),
-                    "Error. The file cannot be read unambigously. Check the characters for the field separator, quote or decimal."
+                    "Error. The file cannot be read unambigously. Consider changing the characters for the field separator, quote or decimal. Remove blank lines. "
                     ))
 
       validate(need(try(iconv(colnames(datainput1), guess_encoding(input$file$datapath)[[1]][1], "UTF-8")),
-                        "Error. Encoding cannot be converted. Please try other upload options."))
+                        "Error. Encoding cannot be converted. Please revise your data and/or try other upload options."))
       
                
       validate(need(try(sapply(datainput1[, sapply(datainput1, is.character)], function(col) iconv(col, guess_encoding(input$file$datapath)[[1]][1], "UTF-8"))),
-                        "Error. Encoding cannot be converted. Please try other upload options."))
+                        "Error. Encoding cannot be converted. Please revise your data and/or try other upload options."))
       
     }
     
@@ -58,7 +58,7 @@ shinyServer(function(input, output, session) {
       
       validate(need(tryCatch(datainput1 <- fread(input$file$datapath, header = "auto", sep="auto", dec=".", encoding = "unknown", 
                                                  data.table = FALSE, na.strings = ""), warning=function(w) {}),
-                    "Error. The file cannot be read unambigously. Check the characters for the field separator, quote or decimal."
+                    "Error. The file cannot be read unambigously. Consider changing the characters for the field separator, quote or decimal. Remove blank lines. "
       ))
 
    }
