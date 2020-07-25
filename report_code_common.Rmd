@@ -7,7 +7,7 @@ title: "Correlation and Association"
 echo_boot <- FALSE
 echo_pformat <- FALSE
 if (exists("df_num")){
-  if (ncol(df_num)>0L & nrow(df_num)>=5){
+  if (ncol(df_num)>0L && nrow(df_num)>=5){
     if (sum(rateunique_df) >= 2L){
 echo_boot <- (count_pearsoncorr>0)
 echo_pformat <- (count_pformat>0)
@@ -35,7 +35,7 @@ options(na.action=na.omit)
 
 if (exists("df_num")){
   
-  if (ncol(df_num)>0L & nrow(df_num)>=5){
+  if (ncol(df_num)>0L && nrow(df_num)>=5){
     
     if (sum(rateunique_df) >= 2L){
       
@@ -53,7 +53,7 @@ if (exists("df_num")){
         
         
         # Consider bivariate continuous 
-        if (rateunique1 >= cutoffcont(length(na.omit(df_num[,j]))) & rateunique2 >= cutoffcont(length(na.omit(df_num[,k])))){
+        if (rateunique1 >= cutoffcont(length(na.omit(df_num[,j]))) && rateunique2 >= cutoffcont(length(na.omit(df_num[,k])))){
           
           # Define working datasets 
           temp <- data.frame(df_num[,j],df_num[,k])
@@ -101,7 +101,7 @@ if (exists("df_num")){
           
           
           tryCatch({  
-            if (check==TRUE & exists("pcorrelation")) {
+            if (check==TRUE && exists("pcorrelation")) {
               cat("`pcorrelation <- cor(df[,j],df[,k], use=\"complete.obs\", method=\"pearson\")`")
               cat("\\newline ") 
               cat("`round(pcorrelation,4)` # `Pearson correlation coefficient`")
@@ -112,7 +112,7 @@ if (exists("df_num")){
           
           
           tryCatch({  
-            if (check==TRUE & normality(df_num[,j],df_num[,k])==TRUE) {
+            if (check==TRUE && normality(df_num[,j],df_num[,k])==TRUE) {
               cat("`fisherci <- cor.test(df[,j],df[,k], method=\"pearson\")`")
               cat("\\newline ")
               cat("`c(round(fisherci$conf.int[1],4),round(fisherci$conf.int[2],4))` # `confidence interval`")
@@ -126,7 +126,7 @@ if (exists("df_num")){
           
           
           tryCatch({  
-            if (check==TRUE & normality(df_num[,j],df_num[,k])==FALSE & nrow(temp3) < 800) {
+            if (check==TRUE && normality(df_num[,j],df_num[,k])==FALSE && nrow(temp3) < 800) {
               temp <- data.frame(df_num[,j],df_num[,k])
               bootdata <- boot(temp, statistic=pearsoncorr, R=1000)
               if (length(unique(round(bootdata$t,2)))>1){
@@ -147,7 +147,7 @@ if (exists("df_num")){
           
           
           tryCatch({  
-            if ((check==TRUE & normality(df_num[,j],df_num[,k])==FALSE & exists("spearman")) || (check==FALSE & checkm==TRUE & exists("spearman")))   {
+            if ((check==TRUE && normality(df_num[,j],df_num[,k])==FALSE && exists("spearman")) || (check==FALSE && checkm==TRUE && exists("spearman")))   {
               
               cat("`spcorrelation <- cor(df[,j],df[,k], use=\"complete.obs\", method=\"spearman\")`")
               cat("\\newline ") 
@@ -159,7 +159,7 @@ if (exists("df_num")){
           
           
           tryCatch({ 
-          if ((check==TRUE & normality(df_num[,j],df_num[,k])==FALSE & exists("spearman")) || (check==FALSE & checkm==TRUE & exists("spearman")))   {
+          if ((check==TRUE && normality(df_num[,j],df_num[,k])==FALSE && exists("spearman")) || (check==FALSE && checkm==TRUE && exists("spearman")))   {
 
               spearmanci <- SpearmanRho(df_num[,j],df_num[,k], use="complete.obs", conf.level=0.95)
               spearmanci2 <- cor.test(df_num[,j],df_num[,k], method="spearman", exact=TRUE)
@@ -183,7 +183,7 @@ if (exists("df_num")){
           
           
            tryCatch({  
-           if ((check==TRUE & normality(df_num[,j],df_num[,k])==FALSE) || (check==FALSE & checkm==TRUE)) {
+           if ((check==TRUE && normality(df_num[,j],df_num[,k])==FALSE) || (check==FALSE && checkm==TRUE)) {
              
               cat("`ken <- suppressWarnings(cor(df[,j],df[,k], use=\"complete.obs\", method=\"kendall\"))`")
               cat("\\newline ") 
@@ -195,7 +195,7 @@ if (exists("df_num")){
           
           
            tryCatch({ 
-            if ((check==TRUE & normality(df_num[,j],df_num[,k])==FALSE) || (check==FALSE & checkm==TRUE)) {
+            if ((check==TRUE && normality(df_num[,j],df_num[,k])==FALSE) || (check==FALSE && checkm==TRUE)) {
               kentest <- cor.test(df_num[,j],df_num[,k], method="kendall")
              
                cat("`kentest <- cor.test(df[,j],df[,k], method=\"kendall\")`")
@@ -209,7 +209,7 @@ if (exists("df_num")){
           
            tryCatch({ 
             
-            if (check==FALSE & checkm==FALSE){
+            if (check==FALSE && checkm==FALSE){
              
               tryCatch({ 
                 

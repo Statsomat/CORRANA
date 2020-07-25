@@ -8,11 +8,33 @@ knitr::opts_chunk$set(echo = FALSE, comment='', message = FALSE, error = TRUE, w
 
 
 ```{r}
+library(knitr) # kable
+
 # Get data
 df <- params$data
-#setdiff(colnames(df),params$vars1)
-df <- df[,params$vars1,drop=FALSE]
-df2 <- df
+
+# Initialize further chunks
+eval0 <- FALSE
+
+tryCatch({
+  
+  df <- df[,params$vars1,drop=FALSE]
+  df2 <- df
+  
+  # Initialize next computations
+  eval0 <- TRUE
+
+}, error=function(e) {
+  
+  stop(safeError("Please try other column names for the following columns: "))
+}
+
+)
+
+if (union(params$vars1,colnames(df)) != colnames(df)){
+  equal <- intersect(colnames(df),params$vars1)
+  kable(setdiff(params$vars1,equal),col.names = "Column")
+}
 ```
 
 ```{r}
@@ -20,7 +42,6 @@ df2 <- df
 library(MASS) # boxtest
 library(boot) # boot
 library(car) # outlierTest, plots
-library(knitr) # kable
 library(nortest) # ad.test
 library(lmtest) # bgtest
 library(DescTools) # SpearmanRho
@@ -68,7 +89,7 @@ if (ncol(df_num)>0){
 
 
 # Initialize next computations
-eval <- TRUE
+eval <- eval0
 
 }, error=function(e) {
   
@@ -80,7 +101,7 @@ eval <- TRUE
 ```
 
 
-```{r, results="asis"}
+```{r, results="asis", eval=eval}
 # Chunk with first page of basic information
 cat("**Warning: The automatic computation and interpretation delivered by the Statsomat should not completely replace the classical, made by humans graphical exploratory data analysis and statistical analysis. There may be data cases for which the Statsomat does not deliver the most optimal solution.**", fill=TRUE)
 cat("\\newline",fill=TRUE) 
@@ -190,63 +211,61 @@ cat("(ordered alphabetically)", fill=TRUE)
 cat("\\newline ")
 ```
 
-```{r, results="asis", dev="cairo_pdf"}
+```{r, results="asis", dev="cairo_pdf", eval=eval2}
 
 options(na.action=na.omit)
+    
+combs = combn(c(1:(ncol(df_num))),2)
 
-if (exists("df_num")){
+# Initialize 
+count_lin <- 0
+count_interpretp <- 0
+count_pearsoncorr <- 0
+count_pformat <- 0
+trace(linearity,tracer=function() {count_lin <<- count_lin + 1},print=FALSE)
+trace(interpret_p,tracer=function() {count_interpretp <<- count_interpretp + 1},print=FALSE)
+trace(pearsoncorr,tracer=function() {count_pearsoncorr <<- count_pearsoncorr + 1},print=FALSE)
+trace(pformat,tracer=function() {count_pformat <<- count_pformat + 1},print=FALSE)
   
-  if (ncol(df_num)>0L & nrow(df_num)>=5){
+for (s in 1:16){
+      name2 <- paste("refs",s,sep="")
+      assign(name2,FALSE)
+}
+
+# Analysis for each pair 
+for (i in 1:ncol(combs)){
+
+  j = combs[1,i]
+  k = combs[2,i]
+
   
-    if (sum(rateunique_df) >= 2L){
-    
-    combs = combn(c(1:(ncol(df_num))),2)
-    
-    # Initialize 
-    count_lin <- 0
-    count_interpretp <- 0
-    count_pearsoncorr <- 0
-    count_pformat <- 0
-    trace(linearity,tracer=function() {count_lin <<- count_lin + 1},print=FALSE)
-    trace(interpret_p,tracer=function() {count_interpretp <<- count_interpretp + 1},print=FALSE)
-    trace(pearsoncorr,tracer=function() {count_pearsoncorr <<- count_pearsoncorr + 1},print=FALSE)
-    trace(pformat,tracer=function() {count_pformat <<- count_pformat + 1},print=FALSE)
-      
-    for (s in 1:16){
-          name2 <- paste("refs",s,sep="")
-          assign(name2,FALSE)
-    }
-    
-    # Analysis for each pair 
-    for (i in 1:ncol(combs)){
-    
-      j = combs[1,i]
-      k = combs[2,i]
+   # Initialize outputs as FALSE
+  for (s in 1:16){
+      name <- paste("output",s,sep="")
+      assign(name,FALSE)
+  }
+  
+  
+  # Define working datasets 
+  temp <- data.frame(df_num[,j],df_num[,k])
+  temp2 <- temp[complete.cases(temp),]
+  temp3 <- unique(temp2)
+  
 
+  # Define rate of unique values to control continuity 
+  rateunique1 <- length(unique(na.omit(df_num[,j]))) / length(na.omit(df_num[,j]))
+  rateunique2 <- length(unique(na.omit(df_num[,k]))) / length(na.omit(df_num[,k]))
+  
+  
+  # Consider pair only if bivariate continuous 
+    if (rateunique1 >= cutoffcont(length(na.omit(df_num[,j]))) && rateunique2 >= cutoffcont(length(na.omit(df_num[,k])))){
       
-       # Initialize outputs as FALSE
-      for (s in 1:16){
-          name <- paste("output",s,sep="")
-          assign(name,FALSE)
-      }
+      cat("Variable pair: ")
+      print(kable(colnames(df_num)[c(j,k)],col.names="Column Names"))
+        
       
-
-      # Define rate of unique values to control continuity 
-      rateunique1 <- length(unique(na.omit(df_num[,j]))) / length(na.omit(df_num[,j]))
-      rateunique2 <- length(unique(na.omit(df_num[,k]))) / length(na.omit(df_num[,k]))
-      
-      
-      # Consider bivariate continuous 
-        if (rateunique1 >= cutoffcont(length(na.omit(df_num[,j]))) & rateunique2 >= cutoffcont(length(na.omit(df_num[,k])))){
-          
-          
-          # Define working datasets 
-          temp <- data.frame(df_num[,j],df_num[,k])
-          temp2 <- temp[complete.cases(temp),]
-          temp3 <- unique(temp2)
-          
-          cat("Variable pair: ")
-          print(kable(colnames(df_num)[c(j,k)],col.names="Column Names"))
+        # Only if complete obs available
+        if (nrow(temp2)>0){
       
           tryCatch({
             # Define check function for Pearson
@@ -286,7 +305,7 @@ if (exists("df_num")){
           
           
           tryCatch({  
-            if (check==TRUE & normality(df_num[,j],df_num[,k])==TRUE) {
+            if (check==TRUE && normality(df_num[,j],df_num[,k])==TRUE) {
               # Inverse Fisher CI
               fisherci <- cor.test(df_num[,j],df_num[,k], method="pearson")
               output2 <- TRUE
@@ -309,14 +328,16 @@ if (exists("df_num")){
           
           
           tryCatch({  
-            if (check==TRUE & normality(df_num[,j],df_num[,k])==FALSE & nrow(temp3) < 800) {
+            if (check==TRUE && normality(df_num[,j],df_num[,k])==FALSE && nrow(temp3) < 800) {
               # Bootstrap CI
               output3 <- TRUE
               refs3 <- TRUE
               bootdata <- boot(temp, statistic=pearsoncorr, R=1000)
+              
               if (length(unique(round(bootdata$t,2)))>1){
                 bootresult <- boot.ci(bootdata, type="bca")
               }
+              
               cat("The Statsomat app assumes that the variables are not normally distributed. Therefore, it computes a 95% confidence interval for the Pearson correlation coefficient based on bootstrapping: (",
                   round(bootresult$bca[4],4),round(bootresult$bca[5],4),").", fill=TRUE)
               
@@ -325,7 +346,7 @@ if (exists("df_num")){
                 pval = 0L
                 } 
                 
-              if (round(bootresult$bca[4],4) <=0 & 0<= round(bootresult$bca[5],4)) {
+              if (round(bootresult$bca[4],4) <=0 && 0<= round(bootresult$bca[5],4)) {
                 cat("Considering the bootstrap confidence interval, the Pearson correlation coefficient is not statistically significant different from 0, with a type I error rate of 5%.", fill=TRUE)
                 pval = 1L 
                 }
@@ -337,8 +358,8 @@ if (exists("df_num")){
                 cat("\\newline",fill=TRUE)
               }
               
-              if ((nrow(temp3) < 10)) {
-                cat("Warning: The sample size could be too small for a reliable bootstrap confidence interval.", fill=TRUE)
+              if ((nrow(temp3) <= 10)) {
+                cat("Warning: The sample size could be too small for a reliable bootstrap confidence interval!", fill=TRUE)
                 cat("\\newline",fill=TRUE)
                 check_nbci <- TRUE
               }
@@ -348,7 +369,7 @@ if (exists("df_num")){
 
           
           tryCatch({  
-            if (check==TRUE & normality(df_num[,j],df_num[,k])==FALSE){
+            if (check==TRUE && normality(df_num[,j],df_num[,k])==FALSE){
               output4 <- TRUE
               refs4 <- TRUE
               cat("The Statsomat app assumes that the variables are not normally distributed. Therefore, it evaluates the association between the variables also by using the Spearman rank correlation coefficient which is estimated to be:",round(spcorrelation,4),". ", fill=TRUE)
@@ -357,7 +378,7 @@ if (exists("df_num")){
           
           
           tryCatch({  
-            if (check==FALSE & checkm==TRUE) {
+            if (check==FALSE && checkm==TRUE) {
               output5 <- TRUE
               refs5 <- TRUE
               cat("The relationship between the variables could be monotonic but not necessarily linear. In this case the Pearson correlation coefficient may not be the optimal measure of dependency. The association between the variables is evaluated by the Spearman rank correlation coefficient, which is estimated to be: ",round(spcorrelation,4),". ")
@@ -366,7 +387,7 @@ if (exists("df_num")){
           
           
           tryCatch({ 
-          if ((check==TRUE & normality(df_num[,j],df_num[,k])==FALSE) || (check==FALSE & checkm==TRUE)) {
+          if ((check==TRUE && normality(df_num[,j],df_num[,k])==FALSE) || (check==FALSE && checkm==TRUE)) {
                # Spearman CI
               output6 <- TRUE
               refs6 <- TRUE
@@ -391,7 +412,7 @@ if (exists("df_num")){
           
           
           tryCatch({  
-            if ((check==TRUE & normality(df_num[,j],df_num[,k])==FALSE) || (check==FALSE & checkm==TRUE)) {
+            if ((check==TRUE && normality(df_num[,j],df_num[,k])==FALSE) || (check==FALSE && checkm==TRUE)) {
               output7 <- TRUE
               refs7 <- TRUE
               cat("The association between the variables is evaluated also by using the Kendall's tau rank correlation coefficient.", fill=TRUE)
@@ -402,7 +423,7 @@ if (exists("df_num")){
           
           
           tryCatch({ 
-            if ((check==TRUE & normality(df_num[,j],df_num[,k])==FALSE) || (check==FALSE & checkm==TRUE)) {
+            if ((check==TRUE && normality(df_num[,j],df_num[,k])==FALSE) || (check==FALSE && checkm==TRUE)) {
               
               # Kendalls Tau if monotonic
               kentest <- cor.test(df_num[,j],df_num[,k], method="kendall")
@@ -426,7 +447,7 @@ if (exists("df_num")){
           
           tryCatch({ 
             
-            if (check==FALSE & checkm==FALSE){
+            if (check==FALSE && checkm==FALSE){
               
               cat("The Statsomat app cannot decide for an acceptable linear or monotonic relationship between the variables. In this case, classical coefficients of correlation (e.g. Pearson, Spearman or Kendall's Tau) and corresponding parametrical statistical tests could be misleading. ", fill=TRUE) 
               output9 <- TRUE
@@ -507,14 +528,14 @@ if (exists("df_num")){
           
         tryCatch({     
           
-          if ((check==TRUE & normality(df_num[,j],df_num[,k])==FALSE & kentest$p.value <= 0.1) || (check==FALSE & checkm==TRUE & kentest$p.value <= 0.1)) {
+          if ((check==TRUE && normality(df_num[,j],df_num[,k])==FALSE && kentest$p.value <= 0.1) || (check==FALSE && checkm==TRUE && kentest$p.value <= 0.1)) {
             
             if (min(length(unique(na.omit(df_num[,j]))), length(unique(na.omit(df_num[,k])))) < nrow(temp2)){
           
               cat("Note: Since there exist ties in the data, the p-values for the Spearman and Kendall's tau hypothesis tests are only approximate. Moreover, in this case the Statsomat app prefers the Kendall's tau to the Spearman hypothesis test. ", fill=TRUE)
               cat("\\newline",fill=TRUE)
             }
-            if ((nrow(temp3) < 800 & kentest$p.value <= 0.1 & spearmanci2$p.value>0.1) || (nrow(temp3) < 800 & kentest$p.value > 0.1 & spearmanci2$p.value<=0.1)){
+            if ((nrow(temp3) < 800 && kentest$p.value <= 0.1 && spearmanci2$p.value>0.1) || (nrow(temp3) < 800 && kentest$p.value > 0.1 && spearmanci2$p.value<=0.1)){
               cat("Note: For this sample size, the Statsomat app prefers the Kendall's tau instead of the Spearman hypothesis test. ", fill=TRUE)
               cat("\\newline",fill=TRUE)
             }
@@ -558,7 +579,7 @@ if (exists("df_num")){
           
           
            tryCatch({ 
-            if (check==TRUE & output12==FALSE){
+            if (check==TRUE && output12==FALSE){
               if (knnoutlier(df_num[,j],df_num[,k])==TRUE || knnoutlier(df_num[,k],df_num[,j])==TRUE){
                 cat("Warning: The Statsomat app detected possible outliers for this variable pair. Outliers may have a negative effect on the reported results related to the Pearson correlation coefficient. Please check your data before uploading to Statsomat or contact the classical statistical consultancy at support@statsomat.com.", fill=TRUE)
                 cat("\\newline",fill=TRUE)
@@ -581,7 +602,7 @@ if (exists("df_num")){
              }}
              
              
-           if (check==FALSE & checkm==TRUE & output13==FALSE) {
+           if (check==FALSE && checkm==TRUE && output13==FALSE) {
             # Breusch-Godfrey test on ranks 
              if (autocorr(rank(df_num[,j]),rank(df_num[,k])) == FALSE){
                cat("Warning:  We assume that the observations are independent and identically distributed. But a preliminary statistical test of serial correlation indicates that the observations may be not independent. Sometimes, this can be caused by a missing covariate. In that case other statistical methods may be more suitable to your data. For more help, please contact the classical statistical consultancy at support@statsomat.com.", fill=TRUE)
@@ -598,7 +619,7 @@ if (exists("df_num")){
              # Small linear correlation - maybe other sort of dependence? 
               text <- "Warning: Other measures of dependence besides the classical coefficients of correlation e.g. the Distance Correlation or the Maximal Information Coefficient could indicate a significant relationship between the variables. For more help, please contact the classical statistical consultancy at support@statsomat.com."
               
-              if (check==TRUE & normality(df_num[,j],df_num[,k])==TRUE){
+              if (check==TRUE && normality(df_num[,j],df_num[,k])==TRUE){
                 if (abs(pcorrelation)<0.2 & output14==FALSE) {
                   if (dependence(df_num[,j],df_num[,k])==TRUE) {
                   refs14 <- TRUE
@@ -610,8 +631,8 @@ if (exists("df_num")){
               }
               
               
-              if (check==TRUE & normality(df_num[,j],df_num[,k])==FALSE){
-                if (abs(pcorrelation)<0.2 & abs(spcorrelation)<0.2 & abs(ken)<0.2 & output14==FALSE) {
+              if (check==TRUE && normality(df_num[,j],df_num[,k])==FALSE){
+                if (abs(pcorrelation)<0.2 && abs(spcorrelation)<0.2 && abs(ken)<0.2 && output14==FALSE) {
                   if (dependence(df_num[,j],df_num[,k])==TRUE) {
                   refs14 <- TRUE
                   output14 <- TRUE
@@ -622,8 +643,8 @@ if (exists("df_num")){
               }
               
               
-              if (check==FALSE & checkm==TRUE){
-                if (abs(spcorrelation)<0.2 & abs(ken)<0.2 & output14==FALSE) {
+              if (check==FALSE && checkm==TRUE){
+                if (abs(spcorrelation)<0.2 && abs(ken)<0.2 && output14==FALSE) {
                   if (dependence(df_num[,j],df_num[,k])==TRUE) {
                   refs14 <- TRUE
                   output14 <- TRUE
@@ -663,16 +684,22 @@ if (exists("df_num")){
           # Cleanup for next pair
           rm(list=c("check", "checkm", "pcorrelation", "spcorrelation", "ken", "dist", "mic", paste("output",seq(1:16),sep="")))
         
-  }
+  
          
-}}}}
-```     
+  } else { # and for non empty complete obs 
+      
+    cat("No complete cases available for this variable pair. ")
+    cat("\\newline",fill=TRUE)    
+      
+}}} # end for each pair with bivariate continuous 
+```  
+
      
-```{r, results="asis"}
+```{r, results="asis", eval=eval2}
 
 tryCatch({
   
-  if (sum(rateunique_df) >= 2L & nrow(df_num)>=5){
+  if (sum(rateunique_df) >= 2L && nrow(df_num)>=5){
 
     # Title 
     cat("\n# R Statistical Methods", fill=TRUE)

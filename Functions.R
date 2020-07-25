@@ -16,11 +16,11 @@ cutoffcont <- function(n){
 }
 
 
+# Compute outliers by knn proximity based method, liberal 
 knnoutlier <- function(x,y){
   
-  # Compute outliers by knn proximity based method, liberal 
-  data<-data.frame(x,y)
-  data<-data[complete.cases(data),]
+  data <-data.frame(x,y)
+  data <-data[complete.cases(data),]
   
   if (nrow(data)>5){
     outliers_scores <- LOOP(data, k=5, lambda=3)
@@ -46,7 +46,9 @@ linearity <- function(x,y){
     outliers <- outliers_scores[which(outliers_scores>0.90)]
     
     if (length(outliers>0)){
+      
       dataclean <- data[-outliers, ]
+      
     } else {
       
       dataclean <-data}
@@ -80,7 +82,7 @@ linearity <- function(x,y){
     vec2<-c(0.75,0.80,0.85,0.90,0.95,1.00,1.05,1.10,1.15,1.20,1.25) %in% round(vec,2)
     boxcoxtest2 <- sum(vec2)
   
-  if (boxcoxtest1 >0L & boxcoxtest2 >0L){
+  if (boxcoxtest1 >0L && boxcoxtest2 >0L){
 
     return(TRUE)
   } else {
@@ -101,7 +103,7 @@ autocorr <- function(x,y){
   
   r2 <- min(bg1$statistic/nrow(data),bg2$statistic/nrow(data))
   
-  if (bg1$p.value > 0.01 & bg2$p.value > 0.01) {
+  if (bg1$p.value > 0.01 && bg2$p.value > 0.01) {
     return(TRUE)
   } else if (r2 < 0.1) {return(TRUE)}
   else {return(FALSE)}
@@ -123,7 +125,7 @@ normality <- function(x,y){
    
   # Shapiro
   if (max(length(x),length(y)) < 150){
-    if (shapiro.test(x)$p.value > 0.05 && shapiro.test(y)$p.value > 0.05 & qqcor>0.9) {
+    if (shapiro.test(x)$p.value > 0.05 && shapiro.test(y)$p.value > 0.05 && qqcor>0.9) {
       return(TRUE)
     } else {
       return(FALSE)
@@ -210,12 +212,12 @@ interpret_p <- function(rho, pvalue){
         cat("\\newline",fill=TRUE)
       }  
       
-      if (abs(rho)>=0.1 & abs(rho)<0.3){
+      if (abs(rho)>=0.1 && abs(rho)<0.3){
         cat("Interpretation: ")
         cat("The estimated Pearson correlation coefficient is small in size. ", fill=TRUE)
       } 
       
-      if (abs(rho)>=0.3 & abs(rho)<0.5){
+      if (abs(rho)>=0.3 && abs(rho)<0.5){
         cat("Interpretation: ")
         cat("The estimated Pearson correlation coefficient is medium in size. ", fill=TRUE)
       }

@@ -247,7 +247,7 @@ shinyServer(function(input, output, session) {
     
       })
       
-      showNotification("Now you can download the report. ",duration=NULL)
+      showNotification("Now you can download the report. ",duration=20)
       
     },
     
