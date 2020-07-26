@@ -1,4 +1,4 @@
-options(shiny.maxRequestSize = 5*1024^2)
+options(shiny.maxRequestSize = 60*1024^2)
 options(shiny.sanitize.errors = TRUE)
 
 library(shiny)
@@ -36,11 +36,11 @@ shinyServer(function(input, output, session) {
                     ))
 
       validate(need(try(iconv(colnames(datainput1), guess_encoding(input$file$datapath)[[1]][1], "UTF-8")),
-                        "Error. Encoding cannot be converted. Please revise your data and/or try other upload options."))
+                        "Error. There is a problem with the selected encoding. Please revise your data and/or try the other encoding option."))
       
                
       validate(need(try(sapply(datainput1[, sapply(datainput1, is.character)], function(col) iconv(col, guess_encoding(input$file$datapath)[[1]][1], "UTF-8"))),
-                        "Error. Encoding cannot be converted. Please revise your data and/or try other upload options."))
+                        "Error. There is a problem with the selected encoding. Please revise your data and/or try the other encoding option."))
       
     }
     

@@ -31,7 +31,7 @@ tryCatch({
 
 )
 
-if (union(params$vars1,colnames(df)) != colnames(df)){
+if (length(setdiff(params$vars1,colnames(df))) >0) {
   equal <- intersect(colnames(df),params$vars1)
   kable(setdiff(params$vars1,equal),col.names = "Column")
 }
@@ -211,27 +211,32 @@ cat("(ordered alphabetically)", fill=TRUE)
 cat("\\newline ")
 ```
 
-```{r, results="asis", dev="cairo_pdf", eval=eval2}
+```{r include=FALSE, eval=eval2}
 
 options(na.action=na.omit)
     
+# Correlation matrix 
 combs = combn(c(1:(ncol(df_num))),2)
 
-# Initialize 
+# Initialize function calls 
 count_lin <- 0
 count_interpretp <- 0
 count_pearsoncorr <- 0
 count_pformat <- 0
-trace(linearity,tracer=function() {count_lin <<- count_lin + 1},print=FALSE)
-trace(interpret_p,tracer=function() {count_interpretp <<- count_interpretp + 1},print=FALSE)
-trace(pearsoncorr,tracer=function() {count_pearsoncorr <<- count_pearsoncorr + 1},print=FALSE)
-trace(pformat,tracer=function() {count_pformat <<- count_pformat + 1},print=FALSE)
-  
+trace(linearity,tracer=function() {count_lin <<- count_lin + 1}, print=FALSE)
+trace(interpret_p,tracer=function() {count_interpretp <<- count_interpretp + 1}, print=FALSE)
+trace(pearsoncorr,tracer=function() {count_pearsoncorr <<- count_pearsoncorr + 1}, print=FALSE)
+trace(pformat,tracer=function() {count_pformat <<- count_pformat + 1}, print=FALSE)
+
+# Initialize overall outputs   
 for (s in 1:16){
       name2 <- paste("refs",s,sep="")
       assign(name2,FALSE)
 }
+```
 
+
+```{r, results="asis", dev="cairo_pdf", eval=eval2}
 # Analysis for each pair 
 for (i in 1:ncol(combs)){
 
@@ -239,7 +244,7 @@ for (i in 1:ncol(combs)){
   k = combs[2,i]
 
   
-   # Initialize outputs as FALSE
+   # For each pair, initialize output
   for (s in 1:16){
       name <- paste("output",s,sep="")
       assign(name,FALSE)
@@ -264,8 +269,8 @@ for (i in 1:ncol(combs)){
       print(kable(colnames(df_num)[c(j,k)],col.names="Column Names"))
         
       
-        # Only if complete obs available
-        if (nrow(temp2)>0){
+        # Only if 5 complete obs available
+        if (nrow(temp2)>=5){
       
           tryCatch({
             # Define check function for Pearson
@@ -281,18 +286,18 @@ for (i in 1:ncol(combs)){
           
           tryCatch({
             pcorrelation <- cor(df_num[,j],df_num[,k], use="complete.obs", method="pearson")
-          }, error=function(e){cat("")})    
+          }, error=function(e){cat(message(e))})    
           
           
           
           tryCatch({
            spcorrelation <- cor(df_num[,j],df_num[,k], use="complete.obs", method="spearman")
-          }, error=function(e){cat("")})   
+          }, error=function(e){cat(message(e))})   
           
           
           tryCatch({
            ken <- cor(df_num[,j],df_num[,k], use="complete.obs", method="kendall")
-          }, error=function(e){cat("")}) 
+          }, error=function(e){cat(message(e))}) 
           
 
           tryCatch({  
@@ -301,7 +306,7 @@ for (i in 1:ncol(combs)){
               refs1 <- TRUE
               cat("The relationship between the variables could be linear. Therefore, the dependence between the variables is quantified by the Pearson correlation coefficient which is estimated to be:",round(pcorrelation,4),".", fill=TRUE)
             }
-          }, error=function(e){cat("")}) 
+          }, error=function(e){cat(message(e))}) 
           
           
           tryCatch({  
@@ -323,7 +328,7 @@ for (i in 1:ncol(combs)){
               interpret_p(pcorrelation,fisherci$p.value)
                 
             }
-          }, error=function(e){cat("")}) 
+          }, error=function(e){cat(message(e))}) 
           
           
           
@@ -364,7 +369,7 @@ for (i in 1:ncol(combs)){
                 check_nbci <- TRUE
               }
             }
-          }, error=function(e){cat("")}) 
+          }, error=function(e){cat(message(e))}) 
           
 
           
@@ -374,7 +379,7 @@ for (i in 1:ncol(combs)){
               refs4 <- TRUE
               cat("The Statsomat app assumes that the variables are not normally distributed. Therefore, it evaluates the association between the variables also by using the Spearman rank correlation coefficient which is estimated to be:",round(spcorrelation,4),". ", fill=TRUE)
             }
-          }, error=function(e){cat("")}) 
+          }, error=function(e){cat(message(e))}) 
           
           
           tryCatch({  
@@ -383,7 +388,7 @@ for (i in 1:ncol(combs)){
               refs5 <- TRUE
               cat("The relationship between the variables could be monotonic but not necessarily linear. In this case the Pearson correlation coefficient may not be the optimal measure of dependency. The association between the variables is evaluated by the Spearman rank correlation coefficient, which is estimated to be: ",round(spcorrelation,4),". ")
             }
-          }, error=function(e){cat("")}) 
+          }, error=function(e){cat(message(e))}) 
           
           
           tryCatch({ 
@@ -408,7 +413,7 @@ for (i in 1:ncol(combs)){
                 
               }
             }
-          }, error=function(e){cat("")}) 
+          }, error=function(e){cat(message(e))}) 
           
           
           tryCatch({  
@@ -418,7 +423,7 @@ for (i in 1:ncol(combs)){
               cat("The association between the variables is evaluated also by using the Kendall's tau rank correlation coefficient.", fill=TRUE)
               cat("The Kendall's tau rank correlation coefficient is:",round(ken,4),".", fill=TRUE)
             }
-          }, error=function(e){cat("")}) 
+          }, error=function(e){cat(message(e))}) 
           
           
           
@@ -442,7 +447,7 @@ for (i in 1:ncol(combs)){
 
               }
               
-            }, error=function(e){cat("")}) 
+            }, error=function(e){cat(message(e))}) 
           
           
           tryCatch({ 
@@ -483,7 +488,7 @@ for (i in 1:ncol(combs)){
                 }
                  output10 <- TRUE
                  refs10 <- TRUE
-              }, error=function(e){cat("")}) 
+              }, error=function(e){cat(message(e))}) 
               
               
               # Distance correlation
@@ -510,11 +515,11 @@ for (i in 1:ncol(combs)){
                 }
                output11 <- TRUE
                refs11 <- TRUE
-              }, error=function(e){cat("")}) 
+              }, error=function(e){cat(message(e))}) 
               
             }
 
-          }, error=function(e){cat("")}) 
+          }, error=function(e){cat(message(e))}) 
           
           
           
@@ -540,7 +545,7 @@ for (i in 1:ncol(combs)){
               cat("\\newline",fill=TRUE)
             }
           }
-        }, error=function(e){cat("")}) 
+        }, error=function(e){cat(message(e))}) 
           
           
           
@@ -573,7 +578,7 @@ for (i in 1:ncol(combs)){
                 refs12 <- TRUE
               }
             }
-          }, error=function(e){cat("")}) 
+          }, error=function(e){cat(message(e))}) 
   
           
           
@@ -585,7 +590,7 @@ for (i in 1:ncol(combs)){
                 cat("\\newline",fill=TRUE)
               }
              }
-          }, error=function(e){cat("")}) 
+          }, error=function(e){cat(message(e))}) 
           
           
 
@@ -611,13 +616,13 @@ for (i in 1:ncol(combs)){
               refs13 <- TRUE
              }}
              
-           }, error=function(e){cat("")}) 
+           }, error=function(e){cat(message(e))}) 
           
           
           
           tryCatch({ 
              # Small linear correlation - maybe other sort of dependence? 
-              text <- "Warning: Other measures of dependence besides the classical coefficients of correlation e.g. the Distance Correlation or the Maximal Information Coefficient could indicate a significant relationship between the variables. For more help, please contact the classical statistical consultancy at support@statsomat.com."
+              text <- "Warning: Other measures of dependence besides the classical coefficients of correlation e.g. the Distance Correlation or the Maximal Information Coefficient indicate a significant relationship between the variables. For more help, please contact the classical statistical consultancy at support@statsomat.com."
               
               if (check==TRUE && normality(df_num[,j],df_num[,k])==TRUE){
                 if (abs(pcorrelation)<0.2 & output14==FALSE) {
@@ -654,7 +659,7 @@ for (i in 1:ncol(combs)){
               }
             }
             
-           }, error=function(e){cat("")}) 
+           }, error=function(e){cat(message(e))}) 
           
           
           
@@ -678,7 +683,7 @@ for (i in 1:ncol(combs)){
             output15 <- TRUE
             refs15 <- TRUE
             cat("\n\n\\pagebreak\n")
-          }, error=function(e){cat("")}) 
+          }, error=function(e){cat(message(e))}) 
           
           
           # Cleanup for next pair
@@ -688,7 +693,7 @@ for (i in 1:ncol(combs)){
          
   } else { # and for non empty complete obs 
       
-    cat("No complete cases available for this variable pair. ")
+    cat("Less than 5 complete cases available for this variable pair. ")
     cat("\\newline",fill=TRUE)    
       
 }}} # end for each pair with bivariate continuous 
@@ -810,7 +815,7 @@ tryCatch({
     }
       
   }
-}, error=function(e) {cat("")}
+}, error=function(e) {cat(message(e))}
 
 )
 

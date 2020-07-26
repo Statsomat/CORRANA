@@ -3,18 +3,12 @@ title: "Correlation and Association"
 ---
 
 
-```{r include=FALSE, results="asis"}
-echo_boot <- FALSE
-echo_pformat <- FALSE
-if (exists("df_num")){
-  if (ncol(df_num)>0L && nrow(df_num)>=5){
-    if (sum(rateunique_df) >= 2L){
+```{r include=FALSE, eval=eval2}
 echo_boot <- (count_pearsoncorr>0)
 echo_pformat <- (count_pformat>0)
-}}}
 ```
 
-```{whites, eval=FALSE, echo = echo_boot}
+```{whites, eval=FALSE, echo = eval2}
 # Function for the bootstrap confidence interval
 pearsoncorr <- function(data,i){
   d <- data[i, ]
@@ -22,43 +16,48 @@ pearsoncorr <- function(data,i){
 }
 ```
 
-```{whites, eval=FALSE, echo = echo_pformat}
+```{whites, eval=FALSE, echo = eval2}
 # Function for the p-value format:
 pformat<-function(p){
   if (p<0.001) return("<0.001") else return (round(p,3))
 }
 ```
 
-```{r, results="asis"}
+```{r, results="asis", eval=eval2}
 
 options(na.action=na.omit)
 
-if (exists("df_num")){
+# Analysis for each pair 
+for (i in 1:ncol(combs)){
+
+  j = combs[1,i]
+  k = combs[2,i]
+
   
-  if (ncol(df_num)>0L && nrow(df_num)>=5){
-    
-    if (sum(rateunique_df) >= 2L){
+   # For each pair, initialize output
+  for (s in 1:16){
+      name <- paste("output",s,sep="")
+      assign(name,FALSE)
+  }
+  
+  
+  # Define working datasets 
+  temp <- data.frame(df_num[,j],df_num[,k])
+  temp2 <- temp[complete.cases(temp),]
+  temp3 <- unique(temp2)
+  
+
+  # Define rate of unique values to control continuity 
+  rateunique1 <- length(unique(na.omit(df_num[,j]))) / length(na.omit(df_num[,j]))
+  rateunique2 <- length(unique(na.omit(df_num[,k]))) / length(na.omit(df_num[,k]))
+  
+  
+  # Consider pair only if bivariate continuous 
+    if (rateunique1 >= cutoffcont(length(na.omit(df_num[,j]))) && rateunique2 >= cutoffcont(length(na.omit(df_num[,k])))){
       
-      combs = combn(c(1:(ncol(df_num))),2)
       
-      # Analysis for each pair 
-      for (i in 1:ncol(combs)){
-        
-        j = combs[1,i]
-        k = combs[2,i]
-        
-        # Define rate of unique values to control continuity 
-        rateunique1 <- length(unique(na.omit(df_num[,j]))) / length(na.omit(df_num[,j]))
-        rateunique2 <- length(unique(na.omit(df_num[,k]))) / length(na.omit(df_num[,k]))
-        
-        
-        # Consider bivariate continuous 
-        if (rateunique1 >= cutoffcont(length(na.omit(df_num[,j]))) && rateunique2 >= cutoffcont(length(na.omit(df_num[,k])))){
-          
-          # Define working datasets 
-          temp <- data.frame(df_num[,j],df_num[,k])
-          temp2 <- temp[complete.cases(temp),]
-          temp3 <- unique(temp2)
+        # Only if 5 complete obs available
+        if (nrow(temp2)>=5){
           
           a <- which(colnames(df2)==colnames(df_num)[j])
           b <- which(colnames(df2)==colnames(df_num)[k])
@@ -279,11 +278,11 @@ if (exists("df_num")){
             cat("\\newline ")
            
           
-}}}}}
+}}}
 
 ```
 
-```{r, results="asis", eval=eval_code}
+```{r, results="asis", eval=eval2}
 cat("\\newpage ")
 cat("\n# R Code License", fill=TRUE)
 cat("In the report included R programming code, the \"Software\" is under the MIT license.")
@@ -295,6 +294,6 @@ cat("\\newline ")
 cat("THE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.")
 ```
 
-```{r, results="asis", eval=eval_code}
+```{r, results="asis", eval=eval2}
 cat("\n# References", fill=TRUE)
 ```
