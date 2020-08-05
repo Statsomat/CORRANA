@@ -1,10 +1,19 @@
-
-library(shiny)
-
-source("chooser.R")
-
-# Define UI for application 
-shinyUI(fluidPage(
+fluidPage(
+  
+  disconnectMessage(
+    text = "An error occured, your session timed out or you disconnected the app. Please check the Instructions. ",
+    refresh = "Reload now",
+    background = "#ff9900",
+    colour = "white",
+    overlayColour = "grey",
+    overlayOpacity = 0.3,
+    refreshColour = "black"
+  ),
+  
+  actionButton("disconnect", "Disconnect the app", style="
+                                    color: black; 
+                                    background-color: #ff9900; 
+                                    float: right"),
   
   tags$head(
     tags$style(HTML("
@@ -194,4 +203,4 @@ fluidRow(column(12,
  
  hr()
  
-))
+)

@@ -1,16 +1,10 @@
-options(shiny.maxRequestSize = 60*1024^2)
-options(shiny.sanitize.errors = TRUE)
-
-library(shiny)
-library(rmarkdown)
-library(data.table)
-library(readr)
-
-source("Functions.R")
-
-# Define server logic 
-shinyServer(function(input, output, session) {
+function(input, output, session) {
   
+  observeEvent(input$disconnect, {
+    session$close()
+  })
+  
+  session$onSessionEnded(stopApp)
   
   # Upload data
   datainput <- reactive({ 
@@ -142,7 +136,7 @@ shinyServer(function(input, output, session) {
   output$selection1 <- renderUI({
     
     req(datainput())
-    
+      
     chooserInput("selection1", "Available", "Selected",
                  colnames(datainput()), c(), size = 15, multiple = TRUE)
     
@@ -281,5 +275,5 @@ shinyServer(function(input, output, session) {
     }
   )
   
-  
-})
+
+}

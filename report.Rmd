@@ -16,7 +16,6 @@ params:
   decimal: NA
   enc_guessed: NA
   vars1: NA
-  vars2: NA
 header-includes:
    - \usepackage{xcolor}
    - \setmainfont[BoldFont=FiraSans-Bold, Extension=.otf]{FiraSans-Regular}

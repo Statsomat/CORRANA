@@ -1,4 +1,4 @@
-# Continuity definition
+# Continuity cutoff with respect to sample size 
 cutoffcont <- function(n){
   
   # Cutoff for continuity f(n)=a*log10(n)+b, f(10)=0.75, f(>=100)=0.25
