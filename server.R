@@ -9,6 +9,8 @@ function(input, output, session) {
   # Upload data
   datainput <- reactive({ 
     
+    
+    
     ###############
     # Validations
     ###############
@@ -66,6 +68,15 @@ function(input, output, session) {
     ###############
     # Datainput code
     ################
+    
+    withProgress(message = 'Waiting for the data...', value=0, {
+      
+      for (i in 1:5) {
+        incProgress(1/5)
+        Sys.sleep(0.25)
+        
+      }
+    
     
     return(tryCatch(
       
@@ -129,6 +140,8 @@ function(input, output, session) {
     ))
     
     
+    }) 
+      
   })
   
   
@@ -143,17 +156,51 @@ function(input, output, session) {
   })
   
   
-  # Stop if column names not distinct
+  # Stop if column names not distinct or if too many columns selected
   observe({
     
     req(input$file, datainput())
     
     if (length(unique(input$selection1$left)) != length(input$selection1$left)){
       
-      showNotification("Error: The columns names are not distinct. Please use distinct column names and restart the app.", duration=20)
-      stopApp()
+      showNotification("Error: The columns names are not distinct. The session will be restarted. ", duration=15)
+      Sys.sleep(5)
+      session$reload()
       
     }
+    
+    if (nrow(datainput()) > 100000){
+      showNotification("Error: Maximum 100000 rows allowed. ", duration=15)
+      Sys.sleep(5)
+      session$reload()
+    }
+    
+    
+    if (length(input$selection1$right) > 25 ){
+      
+      showNotification("Error: Please select less than 25 columns in an app call.", duration=15)
+      Sys.sleep(5)
+      session$reload()
+      
+    }
+    
+    
+    if (nrow(datainput()) > 5000 && nrow(datainput()) < 10000 && length(input$selection1$right) > 5){
+      
+      showNotification("Warning: Out of memory possible. For your sample size, please select a maximum of 5 columns in an app call. ", duration=15)
+      Sys.sleep(5)
+      session$reload()
+      
+    }
+    
+    if (nrow(datainput()) >=10000 && length(input$selection1$right) > 3){
+      
+      showNotification("Warning: Out of memory possible. For your sample size, please select a maximum of 3 columns in an app call. ", duration=15)
+      Sys.sleep(5)
+      session$reload()
+      
+    }
+    
     
   })
   
@@ -209,8 +256,8 @@ function(input, output, session) {
       
       withProgress(message = 'Please wait, the Statsomat app is computing. This may take a while.', value=0, {
         
-        for (i in 1:15) {
-          incProgress(1/15)
+        for (i in 1:40) {
+          incProgress(1/40)
           Sys.sleep(0.25)
           
         }

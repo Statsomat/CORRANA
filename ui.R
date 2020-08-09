@@ -1,7 +1,7 @@
 fluidPage(
   
   disconnectMessage(
-    text = "An error occured, your session timed out or you disconnected the app. Please check the Instructions. ",
+    text = "Error or your session timed out. ",
     refresh = "Reload now",
     background = "#ff9900",
     colour = "white",
@@ -10,7 +10,7 @@ fluidPage(
     refreshColour = "black"
   ),
   
-  actionButton("disconnect", "Disconnect the app", style="
+  actionButton("reload", "Reload the app", onclick ="location.href='http://statsomat.shinyapps.io/correlations';", style="
                                     color: black; 
                                     background-color: #ff9900; 
                                     float: right"),

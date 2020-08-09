@@ -324,14 +324,14 @@ dependence <- function(x,y){
   data<-data[complete.cases(data),]
   
   if (nrow(data) <= 100){
-    mic<- testforDEP(x,y, test="MIC", rm.na=TRUE, p.opt="MC")
-  } else {
+    mic<- testforDEP(x,y, test="MIC", rm.na=TRUE, p.opt="MC", num.MC = 1000)
+  } else if (nrow(data) < 5000) {
     mic<- testforDEP(x,y, test="MIC", rm.na=TRUE, p.opt="table")
   }
   
   dist <- dcor.test(data[,1],data[,2], R=100)
   
-  if ((mic@TS>=0.3 & mic@p_value <= 0.1) || (dist$statistic >=0.3 & dist$p.value <= 0.1)){
+  if ((exists("mic") && mic@TS>=0.3 && mic@p_value <= 0.1) || (dist$statistic >=0.3 && dist$p.value <= 0.1)){
     return(TRUE)
   } else {return(FALSE)}
   
