@@ -18,6 +18,7 @@ eval0 <- FALSE
 
 tryCatch({
   
+  df_code <- df
   df <- df[,params$vars1,drop=FALSE]
   df2 <- df
   

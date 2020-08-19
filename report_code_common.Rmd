@@ -2,7 +2,6 @@
 title: "Correlation and Association"
 ---
 
-
 ```{r include=FALSE, eval=eval2}
 echo_boot <- (count_pearsoncorr>0)
 echo_pformat <- (count_pformat>0)
@@ -46,8 +45,8 @@ for (i in 1:ncol(combs)){
   # Consider pair only sample size >= 5 and uniques >=3
   if (min(unique1,unique2) >= 3 && nrow(datapaircomplete)>=5){
           
-          a <- which(colnames(df2)==colnames(df_cont)[j])
-          b <- which(colnames(df2)==colnames(df_cont)[k])
+          a <- which(colnames(df_code)==colnames(df_cont)[j])
+          b <- which(colnames(df_code)==colnames(df_cont)[k])
           
           cat("`j = `",a)
           cat("\\newline ")                                                                                                    

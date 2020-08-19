@@ -28,17 +28,7 @@ header-includes:
 ```{r child = 'report_kernel.Rmd'}
 ```
 
-```{r include=FALSE}
-eval_code=FALSE
-if (exists("df_num")){
-  if (ncol(df_num)>0L & nrow(df_num)>=5){
-    if (sum(rateunique_df) >= 2L){
-eval_code=TRUE
-}}}
-```
-
-
-```{r, results="asis", eval=eval_code}
+```{r, results="asis", eval=eval2}
 cat("\n# R Packages", fill=TRUE)
 cat("The statistical numbers and graphics within this report are generated with following R and packages versions:", fill=TRUE)
 cat("\\newline ")
@@ -60,7 +50,7 @@ cat("\\pagebreak")
 
 \pagestyle{empty} 
 
-```{r, results="asis", eval=eval_code}
+```{r, results="asis", eval=eval2}
 cat("\n# R Code ", fill=TRUE)
 cat("\\normalsize\\textcolor{blue}{Instructions\\newline
 If not already available, please install R, RStudio and the requiered packages listed on the previous page. We assume that your data is stored at this location: \"C:\\textbackslash \". If not, please change the path to your data in the code below. For Windows users, avoid to use paths containing white spaces. Copy the code below, paste it carefully in a new R Script within RStudio and run it. The numerical results will be printed in the Console. The graphs can be accessed in the Plots tab. }
@@ -73,26 +63,26 @@ pre.whites {
 }
 </style>
 
-```{whites, eval=FALSE, echo = eval_code}
+```{whites, eval=FALSE, echo = eval2}
 options(na.action=na.omit) # Option for missing values 
 
 # Import required libraries
-library(data.table)
-library(boot) 
-library(car) 
-library(DescTools) 
-library(testforDEP) 
-library(energy) 
+suppressPackageStartupMessages(library(data.table))
+suppressPackageStartupMessages(library(boot)) 
+suppressPackageStartupMessages(library(car)) 
+suppressPackageStartupMessages(library(DescTools)) 
+suppressPackageStartupMessages(library(testforDEP)) 
+suppressPackageStartupMessages(library(energy)) 
 ```
 
-```{r, results="asis", eval=eval_code}
+```{r, results="asis", eval=eval2}
 cat("\\# `Define the path to your data (please remark the forward slash)`")
 cat("\\newline ")  
 cat("`filepath <-")
 cat(paste0("\"C:/",params$filename[1],"\"`"))
 ```
 
-```{r, results="asis", eval=eval_code}
+```{r, results="asis", eval=eval2}
 if (params$decimal == "auto"){
   cat("\\# `Upload the data`")
   cat("\\newline ")  
@@ -115,7 +105,7 @@ if (params$decimal == "auto"){
 }
 ```
 
-```{r, results="asis", eval=eval_code}
+```{r, results="asis", eval=eval2}
 cat("\\# `Convert characters to UTF-8 encoding`")
 cat("\\newline ")
 cat("\\## `Depending on your local R settings`")
@@ -129,5 +119,5 @@ cat("\\newline ")
 cat(paste0("`df[ ,col_names] <- sapply(df[, col_names], function(col) iconv(col, \"",params$enc_guessed,"\", \"UTF-8\"))`"))
 ```
 
-```{r child = 'report_code_common.Rmd', eval=eval_code}
+```{r child = 'report_code_common.Rmd', eval=eval2}
 ```
