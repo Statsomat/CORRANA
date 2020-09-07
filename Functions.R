@@ -69,8 +69,8 @@ linearity <- function(x,y){
       y1 <- yclean+abs(min(yclean,na.rm=TRUE))+0.01*(max(yclean,na.rm=TRUE)-min(yclean,na.rm=TRUE))
    } else {y1 <- yclean}
     trafo <- boxcox(y1 ~ xclean, lambda = seq(-6,6,0.05), plotit = FALSE)
-    vec<-trafo$x[trafo$y > max(trafo$y) - 1/2 * qchisq(.999,1)]
-    vec2<-c(0.75,0.80,0.85,0.90,0.95,1.00,1.05,1.10,1.15,1.20,1.25) %in% round(vec,2)
+    vec<-trafo$x[trafo$y > max(trafo$y) - 1/2 * qchisq(.95,1)]
+    vec2<-c(0.80,0.85,0.90,0.95,1.00,1.05,1.10,1.15,1.20) %in% round(vec,2)
     boxcoxtest1 <- sum(vec2)
   
   # Just positive allowed 
@@ -78,11 +78,11 @@ linearity <- function(x,y){
      x1 <- xclean+abs(min(xclean,na.rm=TRUE))+0.01*(max(xclean,na.rm=TRUE)-min(xclean,na.rm=TRUE))
     } else {x1 <- xclean}
     trafo <- boxcox(x1 ~ yclean, lambda = seq(-6,6,0.05), plotit = FALSE)
-    vec<-trafo$x[trafo$y > max(trafo$y) - 1/2 * qchisq(.999,1)]
-    vec2<-c(0.75,0.80,0.85,0.90,0.95,1.00,1.05,1.10,1.15,1.20,1.25) %in% round(vec,2)
+    vec<-trafo$x[trafo$y > max(trafo$y) - 1/2 * qchisq(.95,1)]
+    vec2<-c(0.80,0.85,0.90,0.95,1.00,1.05,1.10,1.15,1.20) %in% round(vec,2)
     boxcoxtest2 <- sum(vec2)
   
-  if (boxcoxtest1 >0L && boxcoxtest2 >0L){
+  if (boxcoxtest1 >0L && boxcoxtest2 >0L && abs(cor(xclean,yclean))>0.1){
 
     return(TRUE)
   } else {

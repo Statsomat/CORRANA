@@ -7,7 +7,7 @@ echo_boot <- (count_pearsoncorr>0)
 echo_pformat <- (count_pformat>0)
 ```
 
-```{whites, eval=FALSE, echo = eval2}
+```{whites, eval=FALSE, echo = refs3}
 # Function for the bootstrap confidence interval
 pearsoncorr <- function(data,i){
   d <- data[i, ]
@@ -15,7 +15,7 @@ pearsoncorr <- function(data,i){
 }
 ```
 
-```{whites, eval=FALSE, echo = eval2}
+```{whites, eval=FALSE, echo = echo_pformat}
 # Function for the p-value format:
 pformat<-function(p){
   if (p<0.001) return("<0.001") else return (round(p,3))
@@ -111,7 +111,7 @@ for (i in 1:ncol(combs)){
           
           
           tryCatch({  
-            if (check==TRUE && normality(df_cont[,j],df_cont[,k])==FALSE && nrow(temp3) < 800) {
+            if (check==TRUE && normality(df_cont[,j],df_cont[,k])==FALSE && nrow(datapaircomplete) < 800) {
               temp <- data.frame(df_cont[,j],df_cont[,k])
               bootdata <- boot(temp, statistic=pearsoncorr, R=1000)
               if (length(unique(round(bootdata$t,2)))>1){
@@ -168,7 +168,7 @@ for (i in 1:ncol(combs)){
           
           
            tryCatch({  
-           if ((check==TRUE && normality(df_cont[,j],df_cont[,k])==FALSE) || (check==FALSE && checkm==TRUE)) {
+           if ((check==TRUE && normality(df_cont[,j],df_cont[,k])==FALSE && exists("ken")) || (check==FALSE && checkm==TRUE && exists("ken"))) {
              
               cat("`ken <- suppressWarnings(cor(df[,j],df[,k], use=\"complete.obs\", method=\"kendall\"))`")
               cat("\\newline ") 
@@ -198,7 +198,7 @@ for (i in 1:ncol(combs)){
              
               tryCatch({ 
                 
-                if (nrow(temp2) <= 100){
+                if (nrow(datapaircomplete)  <= 100){
                   
                   mic <- testforDEP(df_cont[,j],df_cont[,k], test="MIC", rm.na=TRUE, p.opt="MC")
 
@@ -235,7 +235,7 @@ for (i in 1:ncol(combs)){
               
               tryCatch({ 
                 
-                 dist <- dcor.test(temp2[,1],temp2[,2], R=100)
+                dist <- dcor.test(datapaircomplete[,1],datapaircomplete[,2], R=100)
                  
                  cat("`temp <- data.frame(df[,j],df[,k])`")
                  cat("\\newline ")
@@ -262,6 +262,9 @@ for (i in 1:ncol(combs)){
             cat("`main=\"Enhanced Scatterplots\", col = \"`#`2fa42d\")`")
             cat("\\newline ")
             cat("\\newline ")
+            
+            
+            rm(list=c("check", "checkm", "pcorrelation", "spcorrelation", "ken", "dist", "mic"))
            
           
 }}

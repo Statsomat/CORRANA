@@ -217,6 +217,10 @@ cat("\\newline ")
 
 # Setups
 options(na.action=na.omit)
+
+# Set seed for one app execution
+seed <- round(runif(1,100,1000))
+set.seed(seed)
     
 # Indices for the correlation matrix
 combs = combn(c(1:(ncol(df_cont))),2)
@@ -337,12 +341,13 @@ for (i in 1:ncol(combs)){
           tryCatch({  
             if (check==TRUE && normality(df_cont[,j],df_cont[,k])==FALSE && nrow(datapaircomplete) < 800) {
               # Bootstrap CI
-              output3 <- TRUE
-              refs3 <- TRUE
+              
               bootdata <- boot(datapaircomplete, statistic=pearsoncorr, R=1000)
               
               if (length(unique(round(bootdata$t,2)))>1){
                 bootresult <- boot.ci(bootdata, type="bca")
+                output3 <- TRUE
+                refs3 <- TRUE
               
                 cat("The Statsomat app assumes that the variables are not normally distributed. Therefore, it computes a 95% confidence interval for the Pearson correlation coefficient based on bootstrapping: (",
                     round(bootresult$bca[4],4),round(bootresult$bca[5],4),").", fill=TRUE)
