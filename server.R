@@ -163,14 +163,14 @@ function(input, output, session) {
     
     if (length(unique(input$selection1$left)) != length(input$selection1$left)){
       
-      showNotification("Error: The columns names are not distinct. The session will be restarted. ", duration=20)
+      showNotification("Error: The columns names are not distinct. The session will be restarted. ", duration=30)
       Sys.sleep(5)
       session$reload()
       
     }
     
     if (nrow(datainput()) > 100000){
-      showNotification("Error: Maximum 100000 rows allowed. ", duration=20)
+      showNotification("Error: Maximum 100000 rows allowed. ", duration=30)
       Sys.sleep(5)
       session$reload()
     }
@@ -178,7 +178,7 @@ function(input, output, session) {
     
     if (length(input$selection1$right) > 25 ){
       
-      showNotification("Error: Please select less than 25 columns in an app call.", duration=20)
+      showNotification("Error: Please select less than 25 columns in an app call.", duration=30)
       Sys.sleep(5)
       session$reload()
       
@@ -187,7 +187,7 @@ function(input, output, session) {
     
     if (nrow(datainput()) > 5000 && nrow(datainput()) < 10000 && length(input$selection1$right) > 5){
       
-      showNotification("Warning: Out of memory possible. For your sample size, please select a maximum of 5 columns in an app call. ", duration=20)
+      showNotification("Warning: Large sample size, out of memory possible. Please select a maximum of 5 columns in an app call. ", duration=30)
       Sys.sleep(5)
       session$reload()
       
@@ -195,7 +195,7 @@ function(input, output, session) {
     
     if (nrow(datainput()) >=10000 && length(input$selection1$right) > 3){
       
-      showNotification("Warning: Out of memory possible. For your sample size, please select a maximum of 3 columns in an app call. ", duration=20)
+      showNotification("Warning: Large sample size, out of memory possible. Please select a maximum of 3 columns in an app call. ", duration=30)
       Sys.sleep(5)
       session$reload()
       
@@ -294,7 +294,7 @@ function(input, output, session) {
     
     error=function(e) {
       # Usually Latex errors catched here
-      showNotification("Report generation error. Please contact the support@statsomat.com.",duration=10)
+      showNotification("Something went wrong. Please contact the support@statsomat.com.",duration=10)
       }
     )
     

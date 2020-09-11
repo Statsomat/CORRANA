@@ -72,8 +72,8 @@ if (length(which(rowSums(rowsums) == dim(df)[2])) != 0L){
 cols_logical <- sapply(df, function(col) is.logical(col))
 df[ ,cols_logical] <- sapply(df[ ,cols_logical], as.character)
 
-# Convert numerical variables with less than 4 unique values to character (omit NAs)
-col_names_numeric <- sapply(df, function(col) length(unique(na.omit(col))) < 4L & is.numeric(col))
+# Convert numerical variables with less than 6 unique values to character (missing values omitted)
+col_names_numeric <- sapply(df, function(col) length(unique(na.omit(col))) < 6L & is.numeric(col))
 df[ ,col_names_numeric] <- sapply(df[ ,col_names_numeric], as.character)
 
 # Extract numerical variables    
@@ -84,10 +84,19 @@ df_num <- df_num[,order(colnames(df_num)),drop=FALSE]
 
 # Extract continuous variables
 if (ncol(df_num)>0){
-  rateunique_df <- sapply(df_num, function(col) (length(unique(na.omit(col))) / length(na.omit(col))) >= cutoffcont(length(na.omit(col))))
+ # rateunique_df <- sapply(df_num, function(col) (length(unique(na.omit(col))) / length(na.omit(col))) >= cutoffcont(length(na.omit(col))))
+  
+  rateunique_df <- sapply(df_num, function(col) continuous(col))
   cols_continuous <- names(which(rateunique_df == TRUE))
-  df_cont <- df_num[,rateunique_df,drop=FALSE]
+  cols_necontinuous <- names(which(rateunique_df == FALSE))
+  
+  df_cont <- df_num[,rateunique_df,drop=FALSE] # numeric, continuous resp. assumption fulfilled 
+  
 } else {rateunique_df<-FALSE}
+
+
+# Extract discrete variables    
+df_char <- df[which(sapply(df, is.character) == 1L)]
 
 
 # Initialize next computations
@@ -105,8 +114,6 @@ eval <- eval0
 
 ```{r, results="asis", eval=eval}
 # Chunk with first page of basic information
-cat("**Warning: The automatic computation and interpretation delivered by the Statsomat should not completely replace the classical, made by humans graphical exploratory data analysis and statistical analysis. There may be data cases for which the Statsomat does not deliver the most optimal solution.**", fill=TRUE)
-cat("\\newline",fill=TRUE) 
 cat("\n# Basic Information", fill=TRUE)
 cat("Automatic statistics for the file:", fill=TRUE)
 dataname <- params$filename[1]
@@ -138,7 +145,7 @@ cat("Variables (columns with at least one non-missing value): ", fill=TRUE)
 cat(dim(df)[2])
 cat("\\newline",fill=TRUE) 
 
-# Missing columns
+# Columns with all NAs
 if (exists("col_names_missing")){
   if (sum(col_names_missing) != 0L){
     cat("Number of columns that are dropped because they contain no values (all values are missing):", sum(col_names_missing))
@@ -146,36 +153,54 @@ if (exists("col_names_missing")){
   } 
 }
 
-cat("Variables considered continuous: ", fill=TRUE)
+
+cat("Variables suitable for this app: ", fill=TRUE)
 if (exists("df_num")){
   if (sum(rateunique_df)>0){
     cat(sum(rateunique_df==TRUE),fill=TRUE)
-    kable(cols_continuous, col.names = "Variables considered continuous")
+    kable(cols_continuous, col.names = "Variables")
   } else {
   
   cat("0",fill=TRUE)
   cat("\\newline",fill=TRUE) }
 }
 
+if (exists("df_num")){
+  if (sum(rateunique_df==TRUE) < ncol(df_num)){ 
+    cat("Variables which are possibly continuous or ordinal: ", fill=TRUE)
+    cat(sum(rateunique_df==FALSE),fill=TRUE)
+    kable(cols_necontinuous, col.names = "Possibly continuous or ordinal")
+  }
+}
+
+cat("Variables considered discrete (not further considered by this app): ", fill=TRUE)
+if (exists("df_char")){
+ cat(ncol(df_char))
+ cat("\\newline",fill=TRUE) 
+ cat("\\newline",fill=TRUE) 
+  } else {
+  cat("0",fill=TRUE)
+  cat("\\newline",fill=TRUE) 
+  cat("\\newline",fill=TRUE) 
+}
+
 
 # Missings more than 50%
 # Go for next chunk
-if (sum(rateunique_df )>=2L && nrow(df_num)>=5){
+if (ncol(df_cont)>=2 && nrow(df_cont)>=5){
 
-  complete_rate <- sapply(rateunique_df, function(col) 1-(sum(is.na(col)) / dim(df)[1])) 
+  complete_rate <- sapply(df_cont, function(col) 1-(sum(is.na(col)) / dim(df_cont)[1])) 
   if (length(which(complete_rate < 0.5)) != 0L){
-    cat("**Warning: These continuous variables have more than 50% missing values:**")
-    miss_var <- names(which(complete_rate < 0.5)) 
+    cat("**Warning: These variables have more than 50% missing values:**")
+    miss_var <- names(which(complete_rate < 0.5))
     kable(miss_var, col.names = "Variable")
   }
-  
-  # Go for next chunk
-  eval2 <- TRUE
+
 } 
 
 
 # Numeric falsly to char? Print only if n>=5 
-if (nrow(df_num)>=5){ 
+if (ncol(df_cont)>=2 && nrow(df_cont)>=5){ 
   
   check_reading <- function(col){
     numeric <- !is.na(as.numeric(col))
@@ -184,15 +209,30 @@ if (nrow(df_num)>=5){
   
   col_names_missing <- sapply(df2, function(col) all(is.na(col)))
   df2[ ,col_names_missing] <- list(NULL)
-  df_char <- df[which(sapply(df2, is.character) == 1L)]
-  numeric_percent <- sapply(df_char, function(col) check_reading(col))
+  df_char2 <- df2[which(sapply(df2, is.character) == 1L)]
+  numeric_percent <- sapply(df_char2, function(col) check_reading(col))
   
   if (length(numeric_percent[(numeric_percent>0.9)]) != 0L){
-    cat("**Warning: More than 90% of the values of these columns could be treated as numeric. Because of some few values, the columns must be treated as discrete. Are all the values plausible? Please revise your data. Make sure you have used the correct decimal character and only blanks as missing values. Column(s):**" )
+    cat("**Warning: More than 90% of the values of these character columns could be treated as numerical. Only because of some few values, the columns must be treated as character. Are all the values plausible? Please revise your data. Make sure you have used the correct decimal character and only blanks as missing values. Column(s):**" )
      charfalse <- names(numeric_percent[(numeric_percent>0.9)])
-     kable(charfalse, col.names = "Variable")
+     kable(charfalse, col.names = "Columns")
   }
 
+}
+
+if (ncol(df_cont)>=2 && nrow(df_cont)>=5 && sum(rateunique_df==TRUE) < ncol(df_num)){ 
+    cat("**Warning: This app is especially designed to analyze and interpret correlations or associations between independent and identically, approximately continuously distributed random variables measured in pairs. **" )
+  cat("\\newline",fill=TRUE) 
+  cat("\\newline",fill=TRUE) 
+}
+
+
+ # Go for next chunk
+if (ncol(df_cont)>=2 && nrow(df_cont)>=5){ 
+  cat("**Warning: The automatic computation and interpretation delivered by the Statsomat should not completely replace the classical, made by humans graphical exploratory data analysis and statistical analysis. There may be data cases for which the Statsomat does not deliver the most optimal solution.**", fill=TRUE)
+cat("\\newline",fill=TRUE) 
+
+  eval2 <- TRUE
 }
 
 ```
@@ -220,7 +260,6 @@ options(na.action=na.omit)
 
 # Set seed for one app execution
 seed <- round(runif(1,100,1000))
-set.seed(seed)
     
 # Indices for the correlation matrix
 combs = combn(c(1:(ncol(df_cont))),2)
@@ -245,7 +284,7 @@ for (s in 1:16){
 
 ```{r, results="asis", dev="cairo_pdf", eval=eval2}
 
-# For each pair from the continuous dataset !!! 
+# For each pair from the df_num=df_cont dataset
 for (i in 1:ncol(combs)){
 
   j = combs[1,i]
@@ -275,7 +314,7 @@ for (i in 1:ncol(combs)){
   unique2 <- length(unique(datapaircomplete[,2])) 
   
   
-  # Consider pair only sample size >= 5 and uniques >=3
+  # Consider pair only sample size >= 5 and unique >=3
     if (min(unique1,unique2) >= 3 && nrow(datapaircomplete)>=5){
       
           tryCatch({
@@ -342,14 +381,16 @@ for (i in 1:ncol(combs)){
             if (check==TRUE && normality(df_cont[,j],df_cont[,k])==FALSE && nrow(datapaircomplete) < 800) {
               # Bootstrap CI
               
+              set.seed(seed)
               bootdata <- boot(datapaircomplete, statistic=pearsoncorr, R=1000)
               
               if (length(unique(round(bootdata$t,2)))>1){
+             
                 bootresult <- boot.ci(bootdata, type="bca")
                 output3 <- TRUE
                 refs3 <- TRUE
               
-                cat("The Statsomat app assumes that the variables are not normally distributed. Therefore, it computes a 95% confidence interval for the Pearson correlation coefficient based on bootstrapping: (",
+                cat("The Statsomat app consideres that at least one variable is not normally distributed. Therefore, it computes a 95% confidence interval for the Pearson correlation coefficient based on bootstrapping: (",
                     round(bootresult$bca[4],4),round(bootresult$bca[5],4),").", fill=TRUE)
                 
                 if (0<round(bootresult$bca[4],4) || round(bootresult$bca[5],4)<0) {
@@ -383,7 +424,7 @@ for (i in 1:ncol(combs)){
             if (check==TRUE && normality(df_cont[,j],df_cont[,k])==FALSE){
               output4 <- TRUE
               refs4 <- TRUE
-              cat("The Statsomat app assumes that the variables are not normally distributed. Therefore, it evaluates the association between the variables also by using the Spearman rank correlation coefficient which is estimated to be:",round(spcorrelation,4),". ", fill=TRUE)
+              cat("The Statsomat app consideres that at least one variable is not normally distributed. Therefore, it evaluates the association between the variables also by using the Spearman rank correlation coefficient which is estimated to be:",round(spcorrelation,4),". ", fill=TRUE)
             }
           }, error=function(e){cat(message(e))}) 
           
@@ -403,10 +444,10 @@ for (i in 1:ncol(combs)){
               output6 <- TRUE
               refs6 <- TRUE
               spearmanci <- SpearmanRho(df_cont[,j],df_cont[,k], use="complete.obs", conf.level=0.95)
-              spearmanci2 <- cor.test(df_cont[,j],df_cont[,k], method="spearman", exact=TRUE)
+              spearmanci2 <- cor.test(df_cont[,j],df_cont[,k], method="spearman", exact=FALSE)
               
               if (exists("spearmanci") && !is.nan(spearmanci[2]) && !is.nan(spearmanci[3])) {
-                cat("An asymptotic 95% confidence interval for the Spearman rank correlation coefficient based on the Fisher's Z transform is: (", round(spearmanci[2],4),round(spearmanci[3],4), ").", fill=TRUE)
+                cat("An asymptotic 95% confidence interval for the Spearman rank correlation coefficient is: (", round(spearmanci[2],4),round(spearmanci[3],4), ").", fill=TRUE)
               }
               
               if (exists("spearmanci2")){
@@ -461,45 +502,49 @@ for (i in 1:ncol(combs)){
             if (check==FALSE && checkm==FALSE){
               
               cat("The Statsomat app cannot decide for an acceptable linear or monotonic relationship between the variables. In this case, classical coefficients of correlation (e.g. Pearson, Spearman or Kendall's Tau) and corresponding parametrical statistical tests could be misleading. ", fill=TRUE) 
+              cat("The Statsomat app applies another measure(s) to quantify the dependence between the variables. ", fill=TRUE)
               output9 <- TRUE
               refs9 <- TRUE  
+              
+              
               # MIC
               tryCatch({ 
                 if (nrow(datapaircomplete) <= 100){
-                  mic <- testforDEP(df_cont[,j],df_cont[,k], test="MIC", rm.na=TRUE, p.opt="MC")
-                } else {mic <- testforDEP(df_cont[,j],df_cont[,k], test="MIC", rm.na=TRUE, p.opt="table")}
-  
-                micval <- minerva::mine(df_cont[,j],df_cont[,k], na.rm=TRUE)$MIC
-                
-                cat("The Statsomat app uses another measure(s) to quantify the dependence between the variables. ", fill=TRUE)
-                cat("\\newline",fill=TRUE)
-  
-                if (mic@p_value > 0.05){ 
-                  cat("The Maximal Information Coefficient (MIC) between the variables is ",round(micval,3), fill=TRUE)     
-                  cat(". The statistical test of a zero MIC leads to a p-value of: ",pformat(mic@p_value), ". Therefore, the MIC is not statistically significant from 0 at a type I error rate of 5%. By using the MIC measure, we cannot identify a dependence between the variables. ", fill=TRUE)
-                  cat("\\newline",fill=TRUE)
-                  cat("Background: The Maximal Information Coefficient is related to the relationship strength and it can be interpreted as a correlation measure. It is symmetric and it ranges in [0,1], where it tends to 0 for statistically independent data and it approaches 1 in probability for noiseless functional relationships. ", fill=TRUE)
-                  cat("\\newline",fill=TRUE)
-                }
-                if (mic@p_value <= 0.05){ 
-                  cat("The Maximum Information Coefficient (MIC) between the variables is ",round(micval,3), fill=TRUE)     
-                  cat(". The statistical test of a zero MIC leads to a p-value of: ",pformat(mic@p_value), ". Therefore, the MIC is statistically significant from 0 at a type I error rate of 5%. There exists a statistically significant dependence between the variables, described by a functional relationship. ", fill=TRUE)
-                  cat(round(micval*100,2), "% of one of the pair variables can be explained by the other variable. ", fill=TRUE)
-                  if (round(micval,3)<0.1){
-                    cat("Nevertheless, the size of the MIC is very small and may have no practical importance. ", fill=TRUE)
+                  set.seed(seed)
+                  mic <- testforDEP(df_cont[,j],df_cont[,k], test="MIC", rm.na=TRUE, p.opt="MC", num.MC = 5000, set.seed = TRUE)
+                } else if (nrow(datapaircomplete) < 5000){
+                  mic <- testforDEP(df_cont[,j],df_cont[,k], test="MIC", rm.na=TRUE, p.opt="table")
                   }
+                if (nrow(datapaircomplete) < 5000){
+                  micval <- minerva::mine(df_cont[,j],df_cont[,k], na.rm=TRUE)$MIC
                   cat("\\newline",fill=TRUE)
-                  cat("Background: The Maximal Information Coefficient is related to the relationship strength and it can be interpreted as a correlation measure. It is symmetric and it ranges in [0,1], where it tends to 0 for statistically independent data and it approaches 1 in probability for noiseless functional relationships. ", fill=TRUE)
-                  cat("\\newline",fill=TRUE)
-                }
-                 output10 <- TRUE
-                 refs10 <- TRUE
-              }, error=function(e){cat(message(e))}) 
+    
+                  if (mic@p_value > 0.05){ 
+                    cat("The Maximal Information Coefficient (MIC) between the variables is ",round(micval,3), fill=TRUE)     
+                    cat(". The statistical test of a zero MIC leads to a p-value of: ",pformat(mic@p_value), ". Therefore, the MIC is not statistically significant from 0 at a type I error rate of 5%. By using the MIC measure, we cannot identify a dependence between the variables. ", fill=TRUE)
+                    cat("\\newline",fill=TRUE)
+                    cat("Background: The Maximal Information Coefficient is related to the relationship strength and it can be interpreted as a correlation measure. It is symmetric and it ranges in [0,1], where it tends to 0 for statistically independent data and it approaches 1 in probability for noiseless functional relationships. ", fill=TRUE)
+                    cat("\\newline",fill=TRUE)
+                  }
+                  if (mic@p_value <= 0.05){ 
+                    cat("The Maximum Information Coefficient (MIC) between the variables is ",round(micval,3), fill=TRUE)     
+                    cat(". The statistical test of a zero MIC leads to a p-value of: ",pformat(mic@p_value), ". Therefore, the MIC is statistically significant from 0 at a type I error rate of 5%. There exists a statistically significant dependence between the variables, described by a functional relationship. ", fill=TRUE)
+                    cat(round(micval*100,2), "% of one of the pair variables can be explained by the other variable. ", fill=TRUE)
+                    if (round(micval,3)<0.1){
+                      cat("Nevertheless, the size of the MIC is very small and may have no practical importance. ", fill=TRUE)
+                    }
+                    cat("\\newline",fill=TRUE)
+                    cat("Background: The Maximal Information Coefficient is related to the relationship strength and it can be interpreted as a correlation measure. It is symmetric and it ranges in [0,1], where it tends to 0 for statistically independent data and it approaches 1 in probability for noiseless functional relationships. ", fill=TRUE)
+                    cat("\\newline",fill=TRUE)
+                  }
+                   output10 <- TRUE
+                   refs10 <- TRUE
+              }}, error=function(e){cat(message(e))}) 
               
               
               # Distance Correlation
               tryCatch({ 
-                
+                 set.seed(seed)
                  dist <- dcor.test(datapaircomplete[,1],datapaircomplete[,2], R=100)
                  
                  if (dist$p.value > 0.05){ 
@@ -543,11 +588,11 @@ for (i in 1:ncol(combs)){
             
             if (min(length(unique(na.omit(df_cont[,j]))), length(unique(na.omit(df_cont[,k])))) < nrow(datapaircomplete)){
           
-              cat("Note: Since there exist ties in the data, the p-values for the Spearman and Kendall's tau hypothesis tests are only approximate. Moreover, in this case the Statsomat app prefers the Kendall's tau to the Spearman hypothesis test. ", fill=TRUE)
+              cat("Note: Since there exist ties in the data, the p-value for the Kendall's tau hypothesis tests is only approximate. Moreover, in this case the Statsomat app recommends the Kendall's tau measure of association instead of the Spearman correlation coefficient. ", fill=TRUE)
               cat("\\newline",fill=TRUE)
             }
-            if ((nrow(datapaircomplete) < 800 && kentest$p.value <= 0.1 && spearmanci2$p.value>0.1) || (nrow(datapaircomplete) < 800 && kentest$p.value > 0.1 && spearmanci2$p.value<=0.1)){
-              cat("Note: For this sample size, the Statsomat app prefers the Kendall's tau instead of the Spearman hypothesis test. ", fill=TRUE)
+            if (nrow(datapaircomplete) < 800 && spearmanci2$p.value>0.1){
+              cat("Note: For this sample size, the Statsomat app recommends the Kendall's tau instead of the Spearman hypothesis test. ", fill=TRUE)
               cat("\\newline",fill=TRUE)
             }
           }
@@ -672,7 +717,7 @@ for (i in 1:ncol(combs)){
           
           # Sample size warning < 25
             if (nrow(datapaircomplete) < 25) {
-                cat("Warning: The available sample size for this data pair could be too small for an acceptable power of the statistical tests, reliable confidence intervals and for a valid interpretation of the results.", fill=TRUE)
+                cat("Warning: The available sample size for this data pair could be too small for an acceptable power of the involved statistical tests, reliable confidence intervals and for a valid interpretation of the results.", fill=TRUE)
                 cat("\\newline",fill=TRUE)
             }
            
@@ -776,7 +821,7 @@ tryCatch({
     
     if (refs6==TRUE){
       # CI Spearman
-      cat("The confidence interval for the Spearman rank correlation coefficient was computed using the DescTools package [@spearmanrho] and the SpearmanRho function. The hypothesis test for the Spearman rank correlation coefficient was computed with the cor.test function. The interpretation of the size of the estimated Spearman rank correlation coefficient relies on Cohen [@cohen]. The interpretation of the size of the Spearman correlation coefficient depends also on your context and purposes. Please consider additional literature from your field of operations to determine common effect sizes. ", fill=TRUE)
+      cat("The confidence interval for the Spearman rank correlation coefficient was computed using the DescTools package [@spearmanrho] and the SpearmanRho function (based on the Fisher's Z transform). The hypothesis test for the Spearman rank correlation coefficient was computed with the cor.test function and the approximation by the Student t-distribution. The interpretation of the size of the estimated Spearman rank correlation coefficient relies on Cohen [@cohen]. The interpretation of the size of the Spearman correlation coefficient depends also on your context and purposes. Please consider additional literature from your field of operations to determine common effect sizes. ", fill=TRUE)
       cat("\\newline",fill=TRUE)
     }
     
@@ -794,9 +839,16 @@ tryCatch({
     }
     
     
-    if (refs10==TRUE || refs11==TRUE){
+    if (refs10==TRUE){
       # Dependence test
-      cat("Dependence was analyzed also by using the Maximal Information Coefficient (MIC) and the Distance Correlation Coefficient. The Maximal Information Coefficient (MIC) was computed by using the package testforDEP [@testfordep] and the function: testforDEP. The Distance Correlation was computed by using the package energy [@energy] and the function: dcor.test. ", fill=TRUE)
+      cat("The dependence between variables was analyzed by using the Maximal Information Coefficient (MIC). The Maximal Information Coefficient (MIC) was computed by using the package testforDEP [@testfordep] and the function: testforDEP. ", fill=TRUE)
+      cat("\\newline",fill=TRUE)
+    }
+    
+    
+    if (refs11==TRUE){
+      # Dependence test
+      cat("The dependence between variables was analyzed by using the Distance Correlation Coefficient. The Distance Correlation was computed by using the package energy [@energy] and the function: dcor.test. ", fill=TRUE)
       cat("\\newline",fill=TRUE)
     }
     

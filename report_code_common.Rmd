@@ -5,6 +5,7 @@ title: "Correlation and Association"
 ```{r include=FALSE, eval=eval2}
 echo_boot <- (count_pearsoncorr>0)
 echo_pformat <- (count_pformat>0)
+eval_seed <- (refs3 || refs10 || refs11)
 ```
 
 ```{whites, eval=FALSE, echo = refs3}
@@ -112,11 +113,15 @@ for (i in 1:ncol(combs)){
           
           tryCatch({  
             if (check==TRUE && normality(df_cont[,j],df_cont[,k])==FALSE && nrow(datapaircomplete) < 800) {
-              temp <- data.frame(df_cont[,j],df_cont[,k])
-              bootdata <- boot(temp, statistic=pearsoncorr, R=1000)
+              
+              set.seed(seed)
+              bootdata <- boot(datapaircomplete, statistic=pearsoncorr, R=1000)
+              
               if (length(unique(round(bootdata$t,2)))>1){
                 
                 cat("`temp <- data.frame(df[,j],df[,k])`")
+                cat("\\newline ")
+                cat("`set.seed(`",seed,"`)`") 
                 cat("\\newline ")
                 cat("`bootdata <- boot(temp, statistic=pearsoncorr, R=1000)`")
                 cat("\\newline ")
@@ -147,7 +152,7 @@ for (i in 1:ncol(combs)){
           if ((check==TRUE && normality(df_cont[,j],df_cont[,k])==FALSE && exists("spearman")) || (check==FALSE && checkm==TRUE && exists("spearman")))   {
 
               spearmanci <- SpearmanRho(df_cont[,j],df_cont[,k], use="complete.obs", conf.level=0.95)
-              spearmanci2 <- cor.test(df_cont[,j],df_cont[,k], method="spearman", exact=TRUE)
+              spearmanci2 <- cor.test(df_cont[,j],df_cont[,k], method="spearman")
                  
               cat("`spearmanci <- SpearmanRho(df[,j],df[,k], use=\"complete.obs\", conf.level=0.95)`")
               cat("\\newline ") 
@@ -157,7 +162,7 @@ for (i in 1:ncol(combs)){
                 cat("\\newline ") 
               }
 
-              cat("`spearmanci2 <- suppressWarnings(cor.test(df[,j],df[,k], method=\"spearman\", exact=TRUE))`")
+              cat("`spearmanci2 <- suppressWarnings(cor.test(df[,j],df[,k], method=\"spearman\"))`")
               cat("\\newline ") 
               cat("`pformat(spearmanci2$p.value)` # `p-value`")
               cat("\\newline ") 
@@ -170,7 +175,7 @@ for (i in 1:ncol(combs)){
            tryCatch({  
            if ((check==TRUE && normality(df_cont[,j],df_cont[,k])==FALSE && exists("ken")) || (check==FALSE && checkm==TRUE && exists("ken"))) {
              
-              cat("`ken <- suppressWarnings(cor(df[,j],df[,k], use=\"complete.obs\", method=\"kendall\"))`")
+              cat("`ken <- cor(df[,j],df[,k], use=\"complete.obs\", method=\"kendall\")`")
               cat("\\newline ") 
               cat("`round(ken,4)` # `Kendall's tau correlation coefficient`")
               cat("\\newline ")
@@ -183,7 +188,7 @@ for (i in 1:ncol(combs)){
             if ((check==TRUE && normality(df_cont[,j],df_cont[,k])==FALSE) || (check==FALSE && checkm==TRUE)) {
               kentest <- cor.test(df_cont[,j],df_cont[,k], method="kendall")
              
-               cat("`kentest <- cor.test(df[,j],df[,k], method=\"kendall\")`")
+               cat("`kentest <-  suppressWarnings(cor.test(df[,j],df[,k], method=\"kendall\"))`")
               cat("\\newline ")
               cat("`pformat(kentest$p.value)` # `p-value`")
               cat("\\newline ")
@@ -200,10 +205,13 @@ for (i in 1:ncol(combs)){
                 
                 if (nrow(datapaircomplete)  <= 100){
                   
-                  mic <- testforDEP(df_cont[,j],df_cont[,k], test="MIC", rm.na=TRUE, p.opt="MC")
+                  set.seed(seed)
+                  mic <- testforDEP(df_cont[,j],df_cont[,k], test="MIC", rm.na=TRUE, p.opt="MC", num.MC = 5000, set.seed = TRUE)
 
                   cat("\\newline ")
-                  cat("`mic <- testforDEP(df[,j],df[,k], test=\"MIC\", rm.na=TRUE, p.opt=\"MC\")`")
+                  cat("`set.seed(`",seed,"`)`") 
+                  cat("\\newline ")
+                  cat("`mic <- suppressWarnings(testforDEP(df[,j],df[,k], test=\"MIC\", set.seed = TRUE, rm.na=TRUE, num.MC = 5000, p.opt=\"MC\"))`")
                   cat("\\newline ")
                   cat("`micval <- minerva::mine(df[,j],df[,k], na.rm=TRUE)$MIC`")
                   cat("\\newline ")
@@ -214,7 +222,7 @@ for (i in 1:ncol(combs)){
                   cat("\\newline ")
 
                   
-                } else {
+                } else if (nrow(datapaircomplete) < 5000){
                   
                 mic <- testforDEP(df_cont[,j],df_cont[,k], test="MIC", rm.na=TRUE, p.opt="table")
   
@@ -235,11 +243,14 @@ for (i in 1:ncol(combs)){
               
               tryCatch({ 
                 
+                set.seed(seed)
                 dist <- dcor.test(datapaircomplete[,1],datapaircomplete[,2], R=100)
                  
                  cat("`temp <- data.frame(df[,j],df[,k])`")
                  cat("\\newline ")
                  cat("`temp2 <- temp[complete.cases(temp),]`")
+                 cat("\\newline ")
+                 cat("`set.seed(`",seed,"`)`") 
                  cat("\\newline ")
                  cat("`dist <- dcor.test(temp2[,1],temp2[,2], R=100)`")
                  cat("\\newline ")
