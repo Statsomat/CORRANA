@@ -16,13 +16,13 @@ cutoffcont <- function(n){
   return(cut)
 }
 
-# Variable continuous or continuous with max 3 replications or other discrete distribution e.g. Poisson 
+# Variables can be: Continuous or continuous with max 3 replications or other discrete distribution which can be approximated by continuous 
 continuous <- function(col){
   
   dt <- data.table(col)
   reps <- na.omit(dt[,.N,by=col])
       
-  if (sum(reps[,2])<=3 || length(unique(na.omit(col))) / length(na.omit(col)) >= cutoffcont(length(na.omit(col)))){
+  if (sum(reps[,2]<=3) || length(unique(na.omit(col))) / length(na.omit(col)) >= cutoffcont(length(na.omit(col)))){
     return(TRUE)
   } else {return(FALSE)
     }

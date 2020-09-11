@@ -72,8 +72,8 @@ if (length(which(rowSums(rowsums) == dim(df)[2])) != 0L){
 cols_logical <- sapply(df, function(col) is.logical(col))
 df[ ,cols_logical] <- sapply(df[ ,cols_logical], as.character)
 
-# Convert numerical variables with less than 6 unique values to character (missing values omitted)
-col_names_numeric <- sapply(df, function(col) length(unique(na.omit(col))) < 6L & is.numeric(col))
+# Convert numerical variables with less than 7 unique values to character (missing values omitted)
+col_names_numeric <- sapply(df, function(col) length(unique(na.omit(col))) < 7L & is.numeric(col))
 df[ ,col_names_numeric] <- sapply(df[ ,col_names_numeric], as.character)
 
 # Extract numerical variables    
@@ -82,10 +82,9 @@ df_num <- df[which(sapply(df, is.numeric) == 1L)]
 # Reorder numerical variables alphabetically 
 df_num <- df_num[,order(colnames(df_num)),drop=FALSE]
 
-# Extract continuous variables
+# Extract approximate continuous variables
 if (ncol(df_num)>0){
- # rateunique_df <- sapply(df_num, function(col) (length(unique(na.omit(col))) / length(na.omit(col))) >= cutoffcont(length(na.omit(col))))
-  
+
   rateunique_df <- sapply(df_num, function(col) continuous(col))
   cols_continuous <- names(which(rateunique_df == TRUE))
   cols_necontinuous <- names(which(rateunique_df == FALSE))
@@ -165,29 +164,11 @@ if (exists("df_num")){
   cat("\\newline",fill=TRUE) }
 }
 
-if (exists("df_num")){
-  if (sum(rateunique_df==TRUE) < ncol(df_num)){ 
-    cat("Variables which are possibly continuous or ordinal: ", fill=TRUE)
-    cat(sum(rateunique_df==FALSE),fill=TRUE)
-    kable(cols_necontinuous, col.names = "Possibly continuous or ordinal")
-  }
-}
-
-cat("Variables considered discrete (not further considered by this app): ", fill=TRUE)
-if (exists("df_char")){
- cat(ncol(df_char))
- cat("\\newline",fill=TRUE) 
- cat("\\newline",fill=TRUE) 
-  } else {
-  cat("0",fill=TRUE)
-  cat("\\newline",fill=TRUE) 
-  cat("\\newline",fill=TRUE) 
-}
 
 
 # Missings more than 50%
 # Go for next chunk
-if (ncol(df_cont)>=2 && nrow(df_cont)>=5){
+if (ncol(df_cont)>=2 && nrow(df_cont)>=7){
 
   complete_rate <- sapply(df_cont, function(col) 1-(sum(is.na(col)) / dim(df_cont)[1])) 
   if (length(which(complete_rate < 0.5)) != 0L){
@@ -199,8 +180,8 @@ if (ncol(df_cont)>=2 && nrow(df_cont)>=5){
 } 
 
 
-# Numeric falsly to char? Print only if n>=5 
-if (ncol(df_cont)>=2 && nrow(df_cont)>=5){ 
+# Numeric falsly to char?  
+if (ncol(df_cont)>=2 && nrow(df_cont)>=7){ 
   
   check_reading <- function(col){
     numeric <- !is.na(as.numeric(col))
@@ -209,7 +190,7 @@ if (ncol(df_cont)>=2 && nrow(df_cont)>=5){
   
   col_names_missing <- sapply(df2, function(col) all(is.na(col)))
   df2[ ,col_names_missing] <- list(NULL)
-  df_char2 <- df2[which(sapply(df2, is.character) == 1L)]
+  df_char2 <- df[which(sapply(df2, is.character) == 1L)]
   numeric_percent <- sapply(df_char2, function(col) check_reading(col))
   
   if (length(numeric_percent[(numeric_percent>0.9)]) != 0L){
@@ -220,17 +201,16 @@ if (ncol(df_cont)>=2 && nrow(df_cont)>=5){
 
 }
 
-if (ncol(df_cont)>=2 && nrow(df_cont)>=5 && sum(rateunique_df==TRUE) < ncol(df_num)){ 
-    cat("**Warning: This app is especially designed to analyze and interpret correlations or associations between independent and identically, approximately continuously distributed random variables measured in pairs. **" )
+if (ncol(df_cont)>=2 && nrow(df_cont)>=7 && sum(rateunique_df==TRUE) < ncol(df_num)){ 
+    cat("**Warning: This app is designed to analyze and interpret correlations or associations between independent and identically, approximately continuously distributed random variables measured in pairs. Variables for which these assumptions are questionable are not considered by the app. **" )
   cat("\\newline",fill=TRUE) 
   cat("\\newline",fill=TRUE) 
 }
 
 
  # Go for next chunk
-if (ncol(df_cont)>=2 && nrow(df_cont)>=5){ 
+if (ncol(df_cont)>=2 && nrow(df_cont)>=7){ 
   cat("**Warning: The automatic computation and interpretation delivered by the Statsomat should not completely replace the classical, made by humans graphical exploratory data analysis and statistical analysis. There may be data cases for which the Statsomat does not deliver the most optimal solution.**", fill=TRUE)
-cat("\\newline",fill=TRUE) 
 
   eval2 <- TRUE
 }
@@ -240,7 +220,7 @@ cat("\\newline",fill=TRUE)
 
 ```{r, results="asis", eval=eval}
 if (eval2==FALSE){
-  cat("**Final result: No pairs of continuous variables detected or sample size smaller than 5. END **", fill=TRUE)
+  cat("**Final result: No pairs of suitable variables detected or sample size smaller than 7. END **", fill=TRUE)
 }
 ```
 
