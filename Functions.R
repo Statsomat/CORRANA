@@ -16,13 +16,13 @@ cutoffcont <- function(n){
   return(cut)
 }
 
-# Variables can be: Continuous or continuous with max 3 replications or other discrete distribution which can be approximated by continuous 
+# Variables can be: Pure continuous or continuous with max 3 replications or other discrete distribution which can be approximated by continuous 
 continuous <- function(col){
   
   dt <- data.table(col)
   reps <- na.omit(dt[,.N,by=col])
       
-  if (sum(reps[,2]<=3) || length(unique(na.omit(col))) / length(na.omit(col)) >= cutoffcont(length(na.omit(col)))){
+  if (all(reps[,2]<=3) || length(unique(na.omit(col))) / length(na.omit(col)) >= cutoffcont(length(na.omit(col)))){
     return(TRUE)
   } else {return(FALSE)
     }
@@ -83,7 +83,7 @@ linearity <- function(x,y){
    } else {y1 <- yclean}
     trafo <- boxcox(y1 ~ xclean, lambda = seq(-6,6,0.05), plotit = FALSE)
     vec<-trafo$x[trafo$y > max(trafo$y) - 1/2 * qchisq(.95,1)]
-    vec2<-c(0.80,0.85,0.90,0.95,1.00,1.05,1.10,1.15,1.20) %in% round(vec,2)
+    vec2<-c(0.85,0.90,0.95,1.00,1.05,1.10,1.15) %in% round(vec,2)
     boxcoxtest1 <- sum(vec2)
   
   # Just positive allowed 
@@ -92,7 +92,7 @@ linearity <- function(x,y){
     } else {x1 <- xclean}
     trafo <- boxcox(x1 ~ yclean, lambda = seq(-6,6,0.05), plotit = FALSE)
     vec<-trafo$x[trafo$y > max(trafo$y) - 1/2 * qchisq(.95,1)]
-    vec2<-c(0.80,0.85,0.90,0.95,1.00,1.05,1.10,1.15,1.20) %in% round(vec,2)
+    vec2<-c(0.85,0.90,0.95,1.00,1.05,1.10,1.15) %in% round(vec,2)
     boxcoxtest2 <- sum(vec2)
   
   if (boxcoxtest1 >0L && boxcoxtest2 >0L && abs(cor(xclean,yclean))>0.1){
