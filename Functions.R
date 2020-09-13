@@ -138,7 +138,7 @@ normality <- function(x,y){
    
   # Shapiro
   if (max(length(x),length(y)) < 150){
-    if (shapiro.test(x)$p.value > 0.05 && shapiro.test(y)$p.value > 0.05 && qqcor>0.9) {
+    if (shapiro.test(x)$p.value > 0.1 && shapiro.test(y)$p.value > 0.1 && qqcor>0.9) {
       return(TRUE)
     } else {
       return(FALSE)
@@ -147,10 +147,22 @@ normality <- function(x,y){
   
   
   # Shapiro
-  if (max(length(x),length(y))>=150 && max(length(x),length(y))<5000){
-    if (shapiro.test(x)$p.value > 0.01 && shapiro.test(y)$p.value > 0.01) {
+  if (max(length(x),length(y))>=150 && max(length(x),length(y))<1000){
+    if (shapiro.test(x)$p.value > 0.05 && shapiro.test(y)$p.value > 0.05) {
       return(TRUE)
     } else if (qqcor >=0.99){
+      return(TRUE)
+    } else {
+      return(FALSE)
+    }
+  }
+  
+  
+  # Shapiro
+  if (max(length(x),length(y))>=1000 && max(length(x),length(y))<5000){
+    if (shapiro.test(x)$p.value > 0.01 && shapiro.test(y)$p.value > 0.01) {
+      return(TRUE)
+    } else if (qqcor >=0.98){
       return(TRUE)
     } else {
       return(FALSE)
@@ -161,7 +173,7 @@ normality <- function(x,y){
   if (max(length(x),length(y)) >= 5000){
     if (ad.test(x)$p.value > 0.01 && ad.test(y)$p.value > 0.01) {
       return(TRUE)
-    } else if (qqcor >=0.98){
+    } else if (qqcor >=0.95){
       return(TRUE)
     } else {
       return(FALSE)

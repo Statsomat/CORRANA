@@ -140,7 +140,7 @@ if (exists("length_non_complete")){
   cat("\\newline",fill=TRUE) 
 }
 
-cat("Variables (columns with at least one non-missing value): ", fill=TRUE)
+cat("Variables selected (columns with at least one non-missing value): ", fill=TRUE)
 cat(dim(df)[2])
 cat("\\newline",fill=TRUE) 
 
@@ -155,7 +155,7 @@ if (exists("col_names_missing")){
 
 if (exists("df_cont") && ncol(df_cont)>=2 && nrow(df_cont)>=7){
 
-  cat("Variables suitable and considered by this app: ", fill=TRUE)
+  cat("Variables considered by this app: ", fill=TRUE)
   if (sum(rateunique_df)>0){
     cat(sum(rateunique_df==TRUE),fill=TRUE)
     kable(cols_continuous, col.names = "Variables")
@@ -170,7 +170,7 @@ if (exists("df_cont") && ncol(df_cont)>=2 && nrow(df_cont)>=7){
   # Missings more than 50%
   complete_rate <- sapply(df_cont, function(col) 1-(sum(is.na(col)) / dim(df_cont)[1])) 
   if (length(which(complete_rate < 0.5)) != 0L){
-    cat("**Warning: These variables have more than 50% missing values:**")
+    cat("\\textcolor{blue}{Warning: These variables have more than 50% missing values: }")
     miss_var <- names(which(complete_rate < 0.5))
     kable(miss_var, col.names = "Variable")
   }
@@ -188,7 +188,7 @@ if (exists("df_cont") && ncol(df_cont)>=2 && nrow(df_cont)>=7){
   numeric_percent <- sapply(df_char2, function(col) check_reading(col))
   
   if (length(numeric_percent[(numeric_percent>0.9)]) != 0L){
-    cat("**Warning: More than 90% of the values of these character columns could be treated as numerical. Only because of some few values, the columns must be treated as character. Are all the values plausible? Please revise your data. Make sure you have used the correct decimal character and only blanks as missing values. Column(s):**" )
+    cat("\\textcolor{blue}{Warning: More than 90% of the values of these character columns could be treated as numerical. Only because of some few values, the columns must be treated as character. Are all the values plausible? Please revise your data. Make sure you have used the correct decimal character and only blanks as missing values. Column(s): }" )
      charfalse <- names(numeric_percent[(numeric_percent>0.9)])
      kable(charfalse, col.names = "Columns")
   }
@@ -196,13 +196,13 @@ if (exists("df_cont") && ncol(df_cont)>=2 && nrow(df_cont)>=7){
 
   # Warning variable suitability 
   if (ncol(df_cont) < ncol(df)){ 
-    cat("**Warning: This app is designed to statistically analyze and interpret correlations or associations between independent and identically, approximately continuously distributed random variables measured in pairs. Variables which are not identified as approximately continuous are not considered by this app. Please also consider other warnings in the next results. **" )
+    cat("\\textcolor{blue}{Warning: This app is designed to statistically analyze and interpret correlations or associations between independent and identically, approximately continuously distributed random variables measured in pairs. Variables which are not identified as approximately continuous are not considered by this app. Please also consider other warnings in the next results. }" )
   cat("\\newline",fill=TRUE) 
   cat("\\newline",fill=TRUE) 
   }
 
   # Final warning
-  cat("**Warning: The automatic statistical analysis and interpretation delivered by the Statsomat should not completely replace the classical, made by humans graphical exploratory data analysis and statistical analysis. There may be data cases for which the Statsomat does not deliver the most optimal solution.**", fill=TRUE)
+  cat("\\textcolor{blue}{Warning: The automatic statistical analysis and interpretation delivered by the Statsomat should not completely replace the classical, made by humans graphical exploratory data analysis and statistical analysis. There may be data cases for which the Statsomat does not deliver the most optimal solution. }", fill=TRUE)
  
   # Go for next chunk
   eval2 <- TRUE
@@ -333,7 +333,7 @@ for (i in 1:ncol(combs)){
               fisherci <- cor.test(df_cont[,j],df_cont[,k], method="pearson")
               output2 <- TRUE
               refs2 <- TRUE
-              cat("The Statsomat app assumes no great departure from the normal distribution of the variables. Therefore, it computes an asymptotic 95% confidence interval for the Pearson correlation coefficient, based on the Fisher's Z transform: (", round(fisherci$conf.int[1],4),round(fisherci$conf.int[2],4), ").", fill=TRUE)
+              cat("The Statsomat app assumes an approximative normal distribution of the variables. Therefore, it computes an asymptotic 95% confidence interval for the Pearson correlation coefficient, based on the Fisher's Z transform: (", round(fisherci$conf.int[1],4),round(fisherci$conf.int[2],4), ").", fill=TRUE)
                 
               if (fisherci$p.value <=0.05) {
                 cat("The statistical test of a zero Pearson correlation coefficient leads to a p-value of:", pformat(fisherci$p.value), ". Therefore, the Pearson correlation coefficient is statistically significant different from 0 at a type I error rate of 5%. ", fill=TRUE)
@@ -363,7 +363,7 @@ for (i in 1:ncol(combs)){
                 output3 <- TRUE
                 refs3 <- TRUE
               
-                cat("The Statsomat app consideres that at least one variable is not normally distributed. Therefore, it computes a 95% confidence interval for the Pearson correlation coefficient based on bootstrapping: (",
+                cat("The Statsomat app consideres that at least one variable is not approximately normally distributed. Therefore, it computes a 95% confidence interval for the Pearson correlation coefficient based on bootstrapping: (",
                     round(bootresult$bca[4],4),round(bootresult$bca[5],4),").", fill=TRUE)
                 
                 if (0<round(bootresult$bca[4],4) || round(bootresult$bca[5],4)<0) {
@@ -397,7 +397,7 @@ for (i in 1:ncol(combs)){
             if (check==TRUE && normality(df_cont[,j],df_cont[,k])==FALSE){
               output4 <- TRUE
               refs4 <- TRUE
-              cat("The Statsomat app consideres that at least one variable is not normally distributed. Therefore, it evaluates the association between the variables also by using the Spearman rank correlation coefficient which is estimated to be:",round(spcorrelation,4),". ", fill=TRUE)
+              cat("The Statsomat app consideres that at least one variable is not approximately normally distributed. Therefore, it evaluates the association between the variables also by using the Spearman rank correlation coefficient which is estimated to be:",round(spcorrelation,4),". ", fill=TRUE)
             }
           }, error=function(e){cat(message(e))}) 
           
@@ -553,7 +553,7 @@ for (i in 1:ncol(combs)){
           # Warnings
           #######
           if (min(length(unique(na.omit(df_cont[,j]))), length(unique(na.omit(df_cont[,k])))) < nrow(datapaircomplete)){
-             cat("Warning: There are some ties in this variable pair. Despite the ties found, the app consideres each variable to be independent and identically, approximately continuously distributed. Please make sure that your experimental design supports the assumptions of this app. ", fill=TRUE)
+             cat("\\textcolor{blue}{Warning: There are some ties in this variable pair. Despite the ties found, the app consideres each variable to be independent and identically, approximately continuously distributed. Please make sure that your experimental design supports the assumptions of this app. }", fill=TRUE)
              cat("\\newline",fill=TRUE)
           }
           
@@ -570,12 +570,12 @@ for (i in 1:ncol(combs)){
             
             if (min(length(unique(na.omit(df_cont[,j]))), length(unique(na.omit(df_cont[,k])))) < nrow(datapaircomplete)){
           
-              cat("Warning: Since there exist ties in the data, the p-value for the Kendall's tau hypothesis tests is only approximate. ", fill=TRUE)
+              cat("\\textcolor{blue}{Warning: Since there exist ties in the data, the p-value for the Kendall's tau hypothesis tests is only approximate. }", fill=TRUE)
               cat("\\newline",fill=TRUE)
             }
             
             if (nrow(datapaircomplete) < 800 && kentest$p.value <= 0.1 && spearmanci2$p.value>0.1){
-              cat("Note: For this sample size, the Statsomat app recommends the Kendall's tau instead of the Spearman hypothesis test. ", fill=TRUE)
+              cat("\\textcolor{blue}{Note: For this sample size, the Statsomat app recommends the Kendall's tau instead of the Spearman hypothesis test. }", fill=TRUE)
               cat("\\newline",fill=TRUE)
             }
           }
@@ -603,7 +603,7 @@ for (i in 1:ncol(combs)){
               }
               
               if ((exists("outlier_sign") && length(outliers_sign) > 0L) || (exists("outlier_sign2") && length(outliers_sign2) > 0L)) {
-                 cat("Warning: The Statsomat app detected possible outliers for this variable pair. Outliers may have a negative effect on the reported results related to the Pearson correlation coefficient. Please check your data before uploading to Statsomat. For payed help contact the statistical consultancy at support@statsomat.com. ", fill=TRUE)
+                 cat("\\textcolor{blue}{Warning: The Statsomat app detected possible outliers for this variable pair. Outliers may have a negative effect on the reported results related to the Pearson correlation coefficient. Please check your data before uploading to Statsomat. }", fill=TRUE)
                 cat("\\newline",fill=TRUE)
                 output12 <- TRUE
                 refs12 <- TRUE
@@ -617,7 +617,7 @@ for (i in 1:ncol(combs)){
            tryCatch({ 
             if (check==TRUE && output12==FALSE){
               if (knnoutlier(df_cont[,j],df_cont[,k])==TRUE || knnoutlier(df_cont[,k],df_cont[,j])==TRUE){
-                cat("Warning: The Statsomat app detected possible outliers for this variable pair. Outliers may have a negative effect on the reported results related to the Pearson correlation coefficient. Please check your data before uploading to Statsomat. For payed help contact the statistical consultancy at support@statsomat.com. ", fill=TRUE)
+                cat("\\textcolor{blue}{Warning: The Statsomat app detected possible outliers for this variable pair. Outliers may have a negative effect on the reported results related to the Pearson correlation coefficient. Please check your data before uploading to Statsomat. }", fill=TRUE)
                 cat("\\newline",fill=TRUE)
               }
              }
@@ -631,7 +631,7 @@ for (i in 1:ncol(combs)){
             if (check==TRUE) {
             # Breusch-Godfrey test, autocorrelation existent if check is false
              if (autocorr(df_cont[,j],df_cont[,k])==FALSE){
-               cat("Warning: We assume that the observations are independent and identically distributed. But a preliminary statistical test of serial correlation indicates that the observations may be not independent. Sometimes, this can be caused by a missing covariate. Other statistical methods may be more suitable to your data. For payed help contact the statistical consultancy at support@statsomat.com. ", fill=TRUE)
+               cat("\\textcolor{blue}{Warning: We assume that the observations are independent and identically distributed. But a preliminary statistical test of serial correlation indicates that the observations may be not independent. Sometimes, this can be caused by a missing covariate. Other statistical methods may be more suitable to your data. }", fill=TRUE)
                cat("\\newline",fill=TRUE)
               output13 <- TRUE
               refs13 <-TRUE
@@ -641,7 +641,7 @@ for (i in 1:ncol(combs)){
            if (check==FALSE && checkm==TRUE && output13==FALSE) {
             # Breusch-Godfrey test on ranks 
              if (autocorr(rank(df_cont[,j]),rank(df_cont[,k])) == FALSE){
-               cat("Warning:  We assume that the observations are independent and identically distributed. But a preliminary statistical test of serial correlation indicates that the observations may be not independent. Sometimes, this can be caused by a missing covariate. In that case other statistical methods may be more suitable to your data. For payed help contact the statistical consultancy at support@statsomat.com. ", fill=TRUE)
+               cat("\\textcolor{blue}{Warning:  We assume that the observations are independent and identically distributed. But a preliminary statistical test of serial correlation indicates that the observations may be not independent. Sometimes, this can be caused by a missing covariate. In that case other statistical methods may be more suitable to your data. }", fill=TRUE)
                cat("\\newline",fill=TRUE)
               output13 <- TRUE
               refs13 <- TRUE
@@ -653,7 +653,7 @@ for (i in 1:ncol(combs)){
           
           tryCatch({ 
              # Small linear correlation - maybe other sort of dependence? 
-              text <- "Warning: Other measures of dependence besides the classical coefficients of correlation e.g. the Distance Correlation or the Maximal Information Coefficient indicate a significant relationship between the variables. For payed help contact the statistical consultancy at support@statsomat.com. "
+              text <- "\\textcolor{blue}{Warning: Other measures of dependence besides the classical coefficients of correlation e.g. the Distance Correlation or the Maximal Information Coefficient indicate a significant relationship between the variables. }"
               
               if (check==TRUE && normality(df_cont[,j],df_cont[,k])==TRUE){
                 if (abs(pcorrelation)<0.2 & output14==FALSE) {
@@ -697,7 +697,7 @@ for (i in 1:ncol(combs)){
           
           # Sample size warning < 25
             if (nrow(datapaircomplete) < 25) {
-                cat("Warning: The available sample size for this data pair could be too small for an acceptable power of the involved statistical tests, reliable confidence intervals and for a valid interpretation of the results. ", fill=TRUE)
+                cat("\\textcolor{blue}{Warning: The available sample size for this data pair could be too small for an acceptable power of the involved statistical tests, reliable confidence intervals and for a valid interpretation of the results. }", fill=TRUE)
                 cat("\\newline",fill=TRUE)
             }
            
@@ -710,7 +710,7 @@ for (i in 1:ncol(combs)){
           #######
           tryCatch({  
             cat("",fill=TRUE)
-            scatterplotMatrix(~df_cont[,j]+df_cont[,k], smooth=FALSE, var.labels=colnames(df_cont)[c(j,k)], main="Enhanced Scatterplots", col = "#2fa42d")
+            scatterplotMatrix(~df_cont[,j]+df_cont[,k], smooth=list(smoother=loessLine, spread=FALSE, lty.smooth=1, lwd.smooth=1.5, col.smooth="#396e9f"), var.labels=colnames(df_cont)[c(j,k)], main="Enhanced Scatterplots", col = "#2fa42d")
             output15 <- TRUE
             refs15 <- TRUE
             cat("\n\n\\pagebreak\n")
@@ -754,8 +754,6 @@ tryCatch({
       if (count_lin>0) {
         cat("Missing values are omitted, e.g. only complete observations are considered. ", fill=TRUE)
         cat("\\newline",fill=TRUE)
-     #   cat("The preliminary assumption of linearity was checked by using the package MASS [@mass] and the boxcox function. For this #step, a preliminary treatment of outliers was performed.", fill=TRUE)
-    #    cat("\\newline",fill=TRUE)
       }
     }
     
@@ -843,13 +841,13 @@ tryCatch({
     if (refs15==TRUE){
       # Plots 
       cat("The scatterplots were done using the package car [@car] and the scatterplotMatrix function.", fill=TRUE)
-      cat("Univariate distribution fits are displayed on the main diagonal. The fitted linear regression line is added to the scatterplots.")
+      cat("Univariate distribution fits are displayed on the main diagonal. The fitted linear regression line (green) and a nonparametric fit (blue) are added to the scatterplots.")
       cat("\\newline",fill=TRUE)
     }
 
     
     if (refs14==TRUE){
-      cat("Note: There are variable pairs for which classical coefficients of correlation are small in absolute value but other measures of dependency, e.g. the Maximal Information Coefficient or the Distance Correlation could reveal a significant dependence relationship. For more help please contact the classical statistical consultancy at support@statsomat.com.", fill=TRUE)
+      cat("Note: There are variable pairs for which classical coefficients of correlation are small in absolute value but other measures of dependency, e.g. the Maximal Information Coefficient or the Distance Correlation could reveal a significant dependence relationship. ", fill=TRUE)
       cat("\\newline",fill=TRUE)
     }
     
