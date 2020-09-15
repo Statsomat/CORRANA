@@ -287,8 +287,8 @@ for (i in 1:ncol(combs)){
   unique2 <- length(unique(datapaircomplete[,2])) 
   
   
-  # Consider pair only sample size >= 5 and unique >=3
-    if (min(unique1,unique2) >= 3 && nrow(datapaircomplete)>=5){
+  # Consider pair only if complete cases >=7 and unique >=5
+    if (min(unique1,unique2) >= 5 && nrow(datapaircomplete)>=7){
       
           tryCatch({
             # Define check function for Pearson
@@ -724,12 +724,12 @@ for (i in 1:ncol(combs)){
          
   } else { 
     
-    if (nrow(datapaircomplete)<5){  
-      cat("Result for this pair: Sample size smaller than 5. No output generated. ")
+    if (nrow(datapaircomplete)<7){  
+      cat("Result for this pair: Sample size smaller than 7. No output generated. ")
       cat("\\newline",fill=TRUE)
       cat("\\newline",fill=TRUE)
     } else {
-      cat("Result for this pair: Less than 3 distinct values for one variable available. No output generated. ")
+      cat("Result for this pair: Less than 5 distinct values for one variable available. No output generated. ")
       cat("\\newline",fill=TRUE) 
       cat("\\newline",fill=TRUE)
     }

@@ -43,8 +43,8 @@ for (i in 1:ncol(combs)){
   unique2 <- length(unique(datapaircomplete[,2])) 
   
   
-  # Consider pair only sample size >= 5 and uniques >=3
-  if (min(unique1,unique2) >= 3 && nrow(datapaircomplete)>=5){
+  # Consider pair only sample size >= 7 and uniques >=5
+  if (min(unique1,unique2) >= 5 && nrow(datapaircomplete)>=7){
           
           a <- which(colnames(df_code)==colnames(df_cont)[j])
           b <- which(colnames(df_code)==colnames(df_cont)[k])
