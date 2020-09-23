@@ -154,62 +154,69 @@ if (exists("col_names_missing")){
 
 
 if (exists("df_cont") && ncol(df_cont)>=2 && nrow(df_cont)>=7){
-
+  
+  # Go for next chunk
+  eval2 <- TRUE
+  
   cat("Variables considered by this app: ", fill=TRUE)
   if (sum(rateunique_df)>0){
     cat(sum(rateunique_df==TRUE),fill=TRUE)
-    kable(cols_continuous, col.names = "Variables")
+    kable(cols_continuous, col.names = "Variable")
   } else {
   cat("0",fill=TRUE)
   cat("\\newline",fill=TRUE) 
   }
 }
-
-
-if (exists("df_cont") && ncol(df_cont)>=2 && nrow(df_cont)>=7){
-  # Missings more than 50%
-  complete_rate <- sapply(df_cont, function(col) 1-(sum(is.na(col)) / dim(df_cont)[1])) 
-  if (length(which(complete_rate < 0.5)) != 0L){
-    cat("\\textcolor{blue}{Warning: These variables have more than 50% missing values: }")
-    miss_var <- names(which(complete_rate < 0.5))
-    kable(miss_var, col.names = "Variable")
-  }
-
-
-  # Numeric falsly to char?  
-  check_reading <- function(col){
-    numeric <- !is.na(as.numeric(col))
-    return(sum(numeric)/sum(!is.na(col)))
-  }
-  
-  col_names_missing <- sapply(df2, function(col) all(is.na(col)))
-  df2[ ,col_names_missing] <- list(NULL)
-  df_char2 <- df[which(sapply(df2, is.character) == 1L)]
-  numeric_percent <- sapply(df_char2, function(col) check_reading(col))
-  
-  if (length(numeric_percent[(numeric_percent>0.9)]) != 0L){
-    cat("\\textcolor{blue}{Warning: More than 90% of the values of these character columns could be treated as numerical. Only because of some few values, the columns must be treated as character. Are all the values plausible? Please revise your data. Make sure you have used the correct decimal character and only blanks as missing values. Column(s): }" )
-     charfalse <- names(numeric_percent[(numeric_percent>0.9)])
-     kable(charfalse, col.names = "Columns")
-  }
-
-
-  # Warning variable suitability 
-  if (ncol(df_cont) < ncol(df)){ 
-    cat("\\textcolor{blue}{Warning: This app is designed to statistically analyze and interpret correlations or associations between independent and identically, approximately continuously distributed random variables measured in pairs. Variables which are not identified as approximately continuous are not considered by this app. Please also consider other warnings in the next results. }" )
-  cat("\\newline",fill=TRUE) 
-  cat("\\newline",fill=TRUE) 
-  }
-
-  # Final warning
-  cat("\\textcolor{blue}{Warning: The automatic statistical analysis and interpretation delivered by the Statsomat should not completely replace the classical, made by humans graphical exploratory data analysis and statistical analysis. There may be data cases for which the Statsomat does not deliver the most optimal solution. }", fill=TRUE)
- 
-  # Go for next chunk
-  eval2 <- TRUE
-}
-
 ```
 
+```{r, results="asis", eval=eval2}
+# Missings more than 50%
+complete_rate <- sapply(df_cont, function(col) 1-(sum(is.na(col)) / dim(df_cont)[1])) 
+if (length(which(complete_rate < 0.5)) != 0L){
+  cat("Warning: These variables have more than 50% missing values: ")
+  miss_var <- names(which(complete_rate < 0.5))
+  kable(miss_var, col.names = "Variable")
+}
+```
+
+```{r, results="asis", eval=eval2}
+# Numeric read falsely to char
+check_reading <- function(col){
+  numeric <- !is.na(as.numeric(col))
+  return(sum(numeric)/sum(!is.na(col)))
+}
+  
+col_names_missing <- sapply(df2, function(col) all(is.na(col)))
+df2[ ,col_names_missing] <- list(NULL)
+df_char2 <- df[which(sapply(df2, is.character) == 1L)]
+numeric_percent <- sapply(df_char2, function(col) check_reading(col))
+  
+if (length(numeric_percent[(numeric_percent>0.9)]) != 0L){
+     cat("Warning: More than 90% of the values of these character columns could be treated as numerical. Only because of some few values, the columns must be treated as character. Are all the values plausible? Please revise your data. Make sure you have used the correct decimal character and only blanks as missing values. Column(s): ")
+     charfalse <- names(numeric_percent[(numeric_percent>0.9)])
+}
+  
+```
+
+```{r, eval=eval2}
+# Numeric read falsely to char
+if (exists("charfalse")){
+   kable(charfalse, col.names = "Columns")
+}
+```
+
+```{r, results="asis", eval=eval2}
+# Warning variable suitability 
+if (ncol(df_cont) < ncol(df)){ 
+  cat("\\textcolor{blue}{Warning: This app is designed to statistically analyze and interpret correlations or associations between independent and identically, approximately continuously distributed random variables measured in pairs. Variables which are not identified as approximately continuous are not considered by this app. Please also consider other warnings in the next results. }" )
+  cat("\\newline",fill=TRUE) 
+  cat("\\newline",fill=TRUE) 
+}
+
+# Final warning
+cat("\\textcolor{blue}{Warning: The automatic statistical analysis and interpretation delivered by the Statsomat should not completely replace the classical, made by humans graphical exploratory data analysis and statistical analysis. There may be data cases for which the Statsomat does not deliver the most optimal solution. }", fill=TRUE)
+
+```
 
 ```{r, results="asis", eval=eval}
 if (eval2==FALSE){
@@ -232,7 +239,7 @@ cat("\\newline ")
 options(na.action=na.omit)
 
 # Set seed for one app execution
-seed <- round(runif(1,100,1000))
+seed <- as.integer(round(runif(1,100,1000)))
     
 # Indices for the correlation matrix
 combs = combn(c(1:(ncol(df_cont))),2)
@@ -362,7 +369,7 @@ for (i in 1:ncol(combs)){
                 bootresult <- boot.ci(bootdata, type="bca")
                 output3 <- TRUE
                 refs3 <- TRUE
-              
+
                 cat("The Statsomat app consideres that at least one variable is not approximately normally distributed. Therefore, it computes a 95% confidence interval for the Pearson correlation coefficient based on bootstrapping: (",
                     round(bootresult$bca[4],4),round(bootresult$bca[5],4),").", fill=TRUE)
                 
@@ -502,7 +509,7 @@ for (i in 1:ncol(combs)){
                   if (mic@p_value <= 0.05){ 
                     cat("The Maximum Information Coefficient (MIC) between the variables is ",round(micval,3), fill=TRUE)     
                     cat(". The statistical test of a zero MIC leads to a p-value of: ",pformat(mic@p_value), ". Therefore, the MIC is statistically significant from 0 at a type I error rate of 5%. There exists a statistically significant dependence between the variables, described by a functional relationship. ", fill=TRUE)
-                    cat(round(micval*100,2), "% of one of the pair variables can be explained by the other variable. ", fill=TRUE)
+                    cat(round(micval*100,2), "% of the variation in one variable may be attributed to the variation in the other variable. ", fill=TRUE)
                     if (round(micval,3)<0.1){
                       cat("Nevertheless, the size of the MIC is very small and may have no practical importance. ", fill=TRUE)
                     }
@@ -718,18 +725,18 @@ for (i in 1:ncol(combs)){
           
           
           # Cleanup for next pair
-          rm(list=c("check", "checkm", "pcorrelation", "spcorrelation", "ken", "dist", "mic", paste("output",seq(1:16),sep="")))
+          rm(list=c("check", "checkm","bootresult","pcorrelation", "spcorrelation", "ken", "dist", "mic", paste("output",seq(1:16),sep="")))
         
   
          
   } else { 
     
     if (nrow(datapaircomplete)<7){  
-      cat("Result for this pair: Sample size smaller than 7. No output generated. ")
+      cat("At least 7 observations required for this app. No output generated. ")
       cat("\\newline",fill=TRUE)
       cat("\\newline",fill=TRUE)
     } else {
-      cat("Result for this pair: Less than 5 distinct values for one variable available. No output generated. ")
+      cat("Less than 5 distinct values for one variable available. No output generated. ")
       cat("\\newline",fill=TRUE) 
       cat("\\newline",fill=TRUE)
     }

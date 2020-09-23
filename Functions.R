@@ -1,16 +1,16 @@
 # Continuity cutoff with respect to sample size 
 cutoffcont <- function(n){
   
-  # Cutoff for continuity f(n)=a*log10(n)+b, f(10)=0.75, f(100)=0.25
+  # Cutoff for continuity f(n)=a*log10(n)+b, f(10)=0.75, , f(50)=0.4, f(100)=0.25
   
   b=125
   a=-50
   
-  if (n<=100) {  
+  if (n<=50) {  
     cut <- min(1,round((a*log10(n)+b)/100,2))
   } else {
     
-    # 20 unique values for sample sizes greater than 100
+    # 20 unique values for sample sizes greater than 50
     cut <- 20/n
   }
   return(cut)
@@ -22,7 +22,8 @@ continuous <- function(col){
   dt <- data.table(col)
   reps <- na.omit(dt[,.N,by=col])
       
-  if (all(reps[,2]<=3) || length(unique(na.omit(col))) / length(na.omit(col)) >= cutoffcont(length(na.omit(col)))){
+  if ( (all(reps[,2]<=3)) || 
+       (length(unique(na.omit(col))) / length(na.omit(col)) >= cutoffcont(length(na.omit(col))))   ){
     return(TRUE)
   } else {return(FALSE)
     }
@@ -255,13 +256,13 @@ interpret_p <- function(rho, pvalue){
       
       if (rho <= -0.1){
         cat(round(rho**2*100,1),"% of the variation in one variable may be attributed to the variation in the other variable. ", fill=TRUE) 
-        cat("There is a linearly decreasing relationship between the variables. If one variables increases in value, then the other one decreases. ")
+        cat("There is a linearly decreasing relationship between the variables. If one variable increases in value, then the other one decreases. ")
         cat("\\newline",fill=TRUE)
       } 
       
       if (rho >= 0.1){
         cat(round(rho**2*100,1),"% of the variation in one variable may be attributed to the variation in the other variable. ", fill=TRUE) 
-        cat("There is a linearly increasing relationship between the variables. If one variables increases in value, then the other one increases too. ") 
+        cat("There is a linearly increasing relationship between the variables. If one variable increases in value, then the other one increases too. ") 
         cat("\\newline",fill=TRUE)
       }
   
@@ -299,12 +300,12 @@ interpret_sp <- function(rho, pvalue){
     }
     
     if (rho <= -0.1){
-      cat("There is a significant, monotonic, decreasing relationship between the variables. If one variables increases in value, then the other one decreases. ")
+      cat("There is a significant, monotonic, decreasing relationship between the variables. If one variable increases in value, then the other one decreases. ")
       cat("\\newline",fill=TRUE)
     } 
     
     if (rho >= 0.1){
-      cat("There is a significant, monotonic, increasing relationship between the variables. If one variables increases in value, then the other one increases too. ") 
+      cat("There is a significant, monotonic, increasing relationship between the variables. If one variable increases in value, then the other one increases too. ") 
       cat("\\newline",fill=TRUE)
     }
   }
