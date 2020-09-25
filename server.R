@@ -1,16 +1,31 @@
 function(input, output, session) {
   
+  
+  # Reload app 
   observeEvent(input$disconnect, {
     session$close()
   })
   
   session$onSessionEnded(stopApp)
   
+  # Upload message
+  observeEvent(input$file, {
+    showModal(modalDialog(
+      title = "Uploading...", "Please Wait", 
+      footer = NULL,
+      fade = FALSE,
+      easyClose = TRUE,
+      size = "s"
+    ))
+    Sys.sleep(2)
+  })
+  
+  
+ 
   # Upload data
   datainput <- reactive({ 
     
-    
-    
+
     ###############
     # Validations
     ###############
@@ -68,14 +83,7 @@ function(input, output, session) {
     ###############
     # Datainput code
     ################
-    
-    withProgress(message = 'Waiting for the data...', value=0, {
-      
-      for (i in 1:5) {
-        incProgress(1/5)
-        Sys.sleep(0.25)
-        
-      }
+  
     
     
     return(tryCatch(
@@ -140,15 +148,16 @@ function(input, output, session) {
     ))
     
     
-    }) 
-      
   })
+  
   
   
   # Select Variables
   output$selection1 <- renderUI({
     
     req(datainput())
+    
+    removeModal()
       
     chooserInput("selection1", "Available", "Selected",
                  colnames(datainput()), c(), size = 15, multiple = TRUE)
@@ -160,6 +169,8 @@ function(input, output, session) {
   observe({
     
     req(input$file, datainput())
+    
+    removeModal()
     
     if (length(unique(input$selection1$left)) != length(input$selection1$left)){
       

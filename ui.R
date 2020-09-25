@@ -31,9 +31,12 @@ fluidPage(
                 
                     "))
     ),
-
   
-  #Disable download button until check positive
+  # Remove progress bar fileinput
+  tags$style(".shiny-file-input-progress {display: none}"),
+  
+  
+  # Disable download button until check positive
   singleton(tags$head(HTML(
     '
   <script type="text/javascript">
@@ -46,7 +49,6 @@ fluidPage(
       });
     })
     
-  
     
   </script>
   '
@@ -89,7 +91,7 @@ fluidPage(
                           h3("Upload"),
                           
                           # File input
-                          fileInput("file", "Choose CSV file",
+                          fileInput("file", "Choose a CSV file",
                                     accept = c(
                                       "text/csv",
                                       "text/comma-separated-values",
