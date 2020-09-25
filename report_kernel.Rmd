@@ -170,6 +170,8 @@ if (exists("df_cont") && ncol(df_cont)>=2 && nrow(df_cont)>=7){
 ```
 
 ```{r, results="asis", eval=eval2}
+cat("\n# Warnings", fill=TRUE)
+
 # Missings more than 50%
 complete_rate <- sapply(df_cont, function(col) 1-(sum(is.na(col)) / dim(df_cont)[1])) 
 if (length(which(complete_rate < 0.5)) != 0L){
@@ -192,29 +194,23 @@ df_char2 <- df[which(sapply(df2, is.character) == 1L)]
 numeric_percent <- sapply(df_char2, function(col) check_reading(col))
   
 if (length(numeric_percent[(numeric_percent>0.9)]) != 0L){
-     cat("Warning: More than 90% of the values of these character columns could be treated as numerical. Only because of some few values, the columns must be treated as character. Are all the values plausible? Please revise your data. Make sure you have used the correct decimal character and only blanks as missing values. Column(s): ")
-     charfalse <- names(numeric_percent[(numeric_percent>0.9)])
+    cat("Warning: More than 90% of the values of these character columns could be treated as numerical. Only because of some few values, the columns must be treated as character and cannot be considered by the app. Are all the values plausible? Please revise your data. Make sure you have used the correct decimal character and only blanks as missing values. Column(s): ")
+    charfalse <- names(numeric_percent[(numeric_percent>0.9)])
+    kable(charfalse, col.names = "Columns")
 }
   
-```
-
-```{r, eval=eval2}
-# Numeric read falsely to char
-if (exists("charfalse")){
-   kable(charfalse, col.names = "Columns")
-}
 ```
 
 ```{r, results="asis", eval=eval2}
 # Warning variable suitability 
 if (ncol(df_cont) < ncol(df)){ 
-  cat("\\textcolor{blue}{Warning: This app is designed to statistically analyze and interpret correlations or associations between independent and identically, approximately continuously distributed random variables measured in pairs. Variables which are not identified as approximately continuous are not considered by this app. Please also consider other warnings in the next results. }" )
+  cat("Warning: This app is designed to statistically analyze and interpret correlations or associations between independent and identically, approximately continuously distributed random variables measured in pairs. Variables which are not identified as approximately continuous are not considered by this app. Please also consider other warnings in the next results. " )
   cat("\\newline",fill=TRUE) 
   cat("\\newline",fill=TRUE) 
 }
 
 # Final warning
-cat("\\textcolor{blue}{Warning: The automatic statistical analysis and interpretation delivered by the Statsomat should not completely replace the classical, made by humans graphical exploratory data analysis and statistical analysis. There may be data cases for which the Statsomat does not deliver the most optimal solution. }", fill=TRUE)
+cat("Warning: The automatic statistical analysis and interpretation delivered by the Statsomat should not completely replace the classical, made by humans graphical exploratory data analysis and statistical analysis. There may be data cases for which the Statsomat does not deliver the most optimal solution. ", fill=TRUE)
 
 ```
 
@@ -385,16 +381,6 @@ for (i in 1:ncol(combs)){
                 
                 interpret_p(pcorrelation, pval)
                 
-                if (bootresult$bca[2] <= 10 || bootresult$bca[3] >= 991) {
-                  cat("Warning: The number of bootstrap replicates used by the Statsomat app is probably too small for this data case. The bootstrap confidence interval may be unstable.", fill=TRUE)
-                  cat("\\newline",fill=TRUE)
-                }
-                
-                if ((nrow(datapaircomplete) <= 10)) {
-                  cat("Warning: The sample size could be too small for a reliable bootstrap confidence interval!", fill=TRUE)
-                  cat("\\newline",fill=TRUE)
-                  check_nbci <- TRUE
-                }
             }}
           }, error=function(e){cat(message(e))}) 
           
@@ -559,21 +545,54 @@ for (i in 1:ncol(combs)){
           #######
           # Warnings
           #######
+      
           if (min(length(unique(na.omit(df_cont[,j]))), length(unique(na.omit(df_cont[,k])))) < nrow(datapaircomplete)){
              cat("\\textcolor{blue}{Warning: There are some ties in this variable pair. Despite the ties found, the app consideres each variable to be independent and identically, approximately continuously distributed. Please make sure that your experimental design supports the assumptions of this app. }", fill=TRUE)
              cat("\\newline",fill=TRUE)
           }
-          
       
+      
+      
+           # Breusch-Godfrey test, autocorrelation existent if check is false
+          tryCatch({ 
+        
+            if (check==TRUE) {
+             if (autocorr(df_cont[,j],df_cont[,k])==FALSE){
+               cat("\\textcolor{blue}{Warning: We assume that the observations are independent and identically distributed. But a preliminary statistical test of serial correlation indicates that the observations may be not independent. Sometimes, this can be caused by a missing covariate. Other statistical methods may be more suitable to your data. }", fill=TRUE)
+               cat("\\newline",fill=TRUE)
+              output13 <- TRUE
+              refs13 <-TRUE
+             }
+            }
+             
+             
+           if (check==FALSE && checkm==TRUE && output13==FALSE) {
+            # Breusch-Godfrey test on ranks 
+             if (autocorr(rank(df_cont[,j]),rank(df_cont[,k])) == FALSE){
+               cat("\\textcolor{blue}{Warning:  We assume that the observations are independent and identically distributed. But a preliminary statistical test of serial correlation indicates that the observations may be not independent. Sometimes, this can be caused by a missing covariate. In that case other statistical methods may be more suitable to your data. }", fill=TRUE)
+               cat("\\newline",fill=TRUE)
+              output13 <- TRUE
+              refs13 <- TRUE
+             }
+            }
+             
+           }, error=function(e){cat(message(e))}) 
+      
+      
+      
+         # Boostrap reps 
+        if (output3 == TRUE){
+            if (bootresult$bca[2] <= 10 || bootresult$bca[3] >= 991) {
+                  cat("\\textcolor{blue}{Warning: The number of bootstrap replicates used by the Statsomat app is probably too small for this data case. The bootstrap confidence interval may be unstable. }", fill=TRUE)
+                  cat("\\newline",fill=TRUE)
+            }
+          }
 
-          
-          #######
-          # Warnings
-          #######
-          
+        
+        # Kendall  
         tryCatch({     
           
-          if ((check==TRUE && normality(df_cont[,j],df_cont[,k])==FALSE) || (check==FALSE && checkm==TRUE)) {
+          if (output8 == TRUE) {
             
             if (min(length(unique(na.omit(df_cont[,j]))), length(unique(na.omit(df_cont[,k])))) < nrow(datapaircomplete)){
           
@@ -589,13 +608,14 @@ for (i in 1:ncol(combs)){
         }, error=function(e){cat(message(e))}) 
           
           
+      
+      
+      
+      
           
-          
-          #########
-          # Warnings
-          #########
+          # Bivariate outliers check and warning 
           tryCatch({      
-            # Bivariate outliers check and warning 
+          
             # Outlier if Bonferroni p < 0.01
             if (check==TRUE) {
               
@@ -633,28 +653,7 @@ for (i in 1:ncol(combs)){
           
 
           
-           tryCatch({ 
-             
-            if (check==TRUE) {
-            # Breusch-Godfrey test, autocorrelation existent if check is false
-             if (autocorr(df_cont[,j],df_cont[,k])==FALSE){
-               cat("\\textcolor{blue}{Warning: We assume that the observations are independent and identically distributed. But a preliminary statistical test of serial correlation indicates that the observations may be not independent. Sometimes, this can be caused by a missing covariate. Other statistical methods may be more suitable to your data. }", fill=TRUE)
-               cat("\\newline",fill=TRUE)
-              output13 <- TRUE
-              refs13 <-TRUE
-             }}
-             
-             
-           if (check==FALSE && checkm==TRUE && output13==FALSE) {
-            # Breusch-Godfrey test on ranks 
-             if (autocorr(rank(df_cont[,j]),rank(df_cont[,k])) == FALSE){
-               cat("\\textcolor{blue}{Warning:  We assume that the observations are independent and identically distributed. But a preliminary statistical test of serial correlation indicates that the observations may be not independent. Sometimes, this can be caused by a missing covariate. In that case other statistical methods may be more suitable to your data. }", fill=TRUE)
-               cat("\\newline",fill=TRUE)
-              output13 <- TRUE
-              refs13 <- TRUE
-             }}
-             
-           }, error=function(e){cat(message(e))}) 
+
           
           
           
@@ -706,6 +705,7 @@ for (i in 1:ncol(combs)){
             if (nrow(datapaircomplete) < 25) {
                 cat("\\textcolor{blue}{Warning: The available sample size for this data pair could be too small for an acceptable power of the involved statistical tests, reliable confidence intervals and for a valid interpretation of the results. }", fill=TRUE)
                 cat("\\newline",fill=TRUE)
+                
             }
            
           
@@ -725,7 +725,9 @@ for (i in 1:ncol(combs)){
           
           
           # Cleanup for next pair
-          rm(list=c("check", "checkm","bootresult","pcorrelation", "spcorrelation", "ken", "dist", "mic", paste("output",seq(1:16),sep="")))
+          rm(list=c("check", "checkm","pcorrelation", 
+                    "spcorrelation", "ken", "dist", "mic", "fisherci", "bootresult", "spearmanci", "spearmanci2",
+                    "kentest", paste("output",seq(1:16),sep="")))
         
   
          

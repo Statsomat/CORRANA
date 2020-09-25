@@ -275,13 +275,16 @@ for (i in 1:ncol(combs)){
           }, error=function(e){cat("")}) 
           
           
-
-            cat("`scatterplotMatrix(~df[,j]+df[,k], smooth=list(smoother=loessLine, spread=FALSE, lty.smooth=1, lwd.smooth=1.5, col.smooth=\"#396e9f\"), var.labels=colnames(df)[c(j,k)],`")
-            cat("\\newline ")
-            cat("`main=\"Enhanced Scatterplots\", col = \"`#`2fa42d\")`")
-            cat("\\newline ")
-            cat("\\newline ")
-            rm(list=c("check", "checkm", "bootresult", "pcorrelation", "spcorrelation", "ken", "dist", "mic"))
+        
+            
+          cat("`scatterplotMatrix(~df[,j]+df[,k], smooth=list(smoother=loessLine, spread=FALSE, lty.smooth=1, lwd.smooth=1.5, col.smooth=\"#396e9f\"), var.labels=colnames(df)[c(j,k)],`")
+          cat("\\newline ")
+          cat("`main=\"Enhanced Scatterplots\", col = \"`#`2fa42d\")`")
+          cat("\\newline ")
+          cat("\\newline ")
+          rm(list=c("check", "checkm","pcorrelation", 
+                    "spcorrelation", "ken", "dist", "mic", "fisherci", "bootresult", "spearmanci", "spearmanci2",
+                    "kentest"))
      
 }}
 
