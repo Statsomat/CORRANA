@@ -14,7 +14,7 @@ fluidPage(
                                     color: black; 
                                     background-color: #ff9900; 
                                     float: right"),
-  
+  # Style notification 
   tags$head(
     tags$style(HTML("
                    .shiny-notification{
@@ -26,14 +26,23 @@ fluidPage(
                     /* Make sure it draws above all Bootstrap components */
                     z-index: 2000;
                     background-color: #ff9900;
+                    border-color: #ff9900;
                 
                    }
                 
                     "))
     ),
   
-  # Remove progress bar fileinput
-  tags$style(".shiny-file-input-progress {display: none}"),
+  # Style uploading
+  tags$head(tags$style(".modal-body {padding: 10px}
+                     .modal-content  {-webkit-border-radius: 6px !important;-moz-border-radius: 6px !important;border-radius: 6px !important;}
+                     .modal-dialog { width: 400px; display: inline-block; text-align: center; vertical-align: top;}
+                     .modal-header {background-color: #ff9900; border-top-left-radius: 6px; border-top-right-radius: 6px}
+                     .modal { text-align: center; padding-right:10px; padding-top: 24px;}
+                     .close { font-size: 16px}")),
+  
+  # Remove progress bar from fileInput
+ # tags$head(tags$style(".shiny-file-input-progress {display: none}")),
   
   
   # Disable download button until check positive

@@ -11,13 +11,13 @@ function(input, output, session) {
   # Upload message
   observeEvent(input$file, {
     showModal(modalDialog(
-      title = "Uploading...", "Please Wait", 
+      title = "Uploading and checking data...", "Please Wait", 
       footer = NULL,
       fade = FALSE,
       easyClose = TRUE,
-      size = "s"
+      size = "l"
     ))
-    Sys.sleep(2)
+    Sys.sleep(1)
   })
   
   
