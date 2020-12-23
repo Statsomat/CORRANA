@@ -303,7 +303,7 @@ function(input, output, session) {
     
     error=function(e) {
       # Usually Latex errors catched here
-      showNotification("Something went wrong. Please contact the support@statsomat.com.",duration=10)
+      showNotification("Something went wrong. Please contact the support@statsomat.com.", duration=10)
       }
     )
     

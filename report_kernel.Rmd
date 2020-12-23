@@ -307,18 +307,18 @@ for (i in 1:ncol(combs)){
           
           tryCatch({
             pcorrelation <- cor(df_cont[,j],df_cont[,k], use="complete.obs", method="pearson")
-          }, error=function(e){cat(message(e))})    
+          }, error=function(e){cat("")})    
           
           
           
           tryCatch({
            spcorrelation <- cor(df_cont[,j],df_cont[,k], use="complete.obs", method="spearman")
-          }, error=function(e){cat(message(e))})   
+          }, error=function(e){cat("")})   
           
           
           tryCatch({
            ken <- cor(df_cont[,j],df_cont[,k], use="complete.obs", method="kendall")
-          }, error=function(e){cat(message(e))}) 
+          }, error=function(e){cat("")}) 
           
 
           tryCatch({  
@@ -327,7 +327,7 @@ for (i in 1:ncol(combs)){
               refs1 <- TRUE
               cat("The relationship between the variables could be linear. Therefore, the dependence between the variables is quantified by the Pearson correlation coefficient which is estimated to be:",round(pcorrelation,4),".", fill=TRUE)
             }
-          }, error=function(e){cat(message(e))}) 
+          }, error=function(e){cat("")}) 
           
           
           tryCatch({  
@@ -349,7 +349,7 @@ for (i in 1:ncol(combs)){
               interpret_p(pcorrelation,fisherci$p.value)
                 
             }
-          }, error=function(e){cat(message(e))}) 
+          }, error=function(e){cat("")}) 
           
           
           
@@ -382,7 +382,7 @@ for (i in 1:ncol(combs)){
                 interpret_p(pcorrelation, pval)
                 
             }}
-          }, error=function(e){cat(message(e))}) 
+          }, error=function(e){cat("")}) 
           
 
           
@@ -392,7 +392,7 @@ for (i in 1:ncol(combs)){
               refs4 <- TRUE
               cat("The Statsomat app consideres that at least one variable is not approximately normally distributed. Therefore, it evaluates the association between the variables also by using the Spearman rank correlation coefficient which is estimated to be:",round(spcorrelation,4),". ", fill=TRUE)
             }
-          }, error=function(e){cat(message(e))}) 
+          }, error=function(e){cat("")}) 
           
           
           tryCatch({  
@@ -401,7 +401,7 @@ for (i in 1:ncol(combs)){
               refs5 <- TRUE
               cat("The relationship between the variables could be monotonic but not necessarily linear. In this case the Pearson correlation coefficient may not be the optimal measure of dependency. The association between the variables is evaluated by the Spearman rank correlation coefficient, which is estimated to be: ",round(spcorrelation,4),". ")
             }
-          }, error=function(e){cat(message(e))}) 
+          }, error=function(e){cat("")}) 
           
           
           tryCatch({ 
@@ -426,7 +426,7 @@ for (i in 1:ncol(combs)){
                 
               }
             }
-          }, error=function(e){cat(message(e))}) 
+          }, error=function(e){cat("")}) 
           
           
           tryCatch({  
@@ -436,7 +436,7 @@ for (i in 1:ncol(combs)){
               cat("The association between the variables is evaluated also by using the Kendall's tau rank correlation coefficient.", fill=TRUE)
               cat("The Kendall's tau rank correlation coefficient is:",round(ken,4),".", fill=TRUE)
             }
-          }, error=function(e){cat(message(e))}) 
+          }, error=function(e){cat("")}) 
           
           
           
@@ -460,7 +460,7 @@ for (i in 1:ncol(combs)){
 
               }
               
-            }, error=function(e){cat(message(e))}) 
+            }, error=function(e){cat("")}) 
           
           
           tryCatch({ 
@@ -505,7 +505,7 @@ for (i in 1:ncol(combs)){
                   }
                    output10 <- TRUE
                    refs10 <- TRUE
-              }}, error=function(e){cat(message(e))}) 
+              }}, error=function(e){cat("")}) 
               
               
               # Distance Correlation
@@ -532,11 +532,11 @@ for (i in 1:ncol(combs)){
                 }
                output11 <- TRUE
                refs11 <- TRUE
-              }, error=function(e){cat(message(e))}) 
+              }, error=function(e){cat("")}) 
               
             }
 
-          }, error=function(e){cat(message(e))}) 
+          }, error=function(e){cat("")}) 
           
           
   
@@ -547,7 +547,7 @@ for (i in 1:ncol(combs)){
           #######
       
           if (min(length(unique(na.omit(df_cont[,j]))), length(unique(na.omit(df_cont[,k])))) < nrow(datapaircomplete)){
-             cat("\\textcolor{blue}{Warning: There are some ties in this variable pair. Despite the ties found, the app consideres each variable to be independent and identically, approximately continuously distributed. Please make sure that your experimental design supports the assumptions of this app. }", fill=TRUE)
+             cat("\\textcolor{blue}{Warning: There are some ties in this variable pair. Despite the ties found, the app considers each variable to be independent and identically, approximately continuously distributed. Please make sure that your experimental design supports the assumptions of this app. }", fill=TRUE)
              cat("\\newline",fill=TRUE)
           }
       
@@ -576,7 +576,7 @@ for (i in 1:ncol(combs)){
              }
             }
              
-           }, error=function(e){cat(message(e))}) 
+           }, error=function(e){cat("")}) 
       
       
       
@@ -605,7 +605,7 @@ for (i in 1:ncol(combs)){
               cat("\\newline",fill=TRUE)
             }
           }
-        }, error=function(e){cat(message(e))}) 
+        }, error=function(e){cat("")}) 
           
           
       
@@ -636,7 +636,7 @@ for (i in 1:ncol(combs)){
                 refs12 <- TRUE
               }
             }
-          }, error=function(e){cat(message(e))}) 
+          }, error=function(e){cat("")}) 
   
           
           
@@ -648,7 +648,7 @@ for (i in 1:ncol(combs)){
                 cat("\\newline",fill=TRUE)
               }
              }
-          }, error=function(e){cat(message(e))}) 
+          }, error=function(e){cat("")}) 
           
           
 
@@ -696,7 +696,7 @@ for (i in 1:ncol(combs)){
               }
             }
             
-           }, error=function(e){cat(message(e))}) 
+           }, error=function(e){cat("")}) 
           
           
           
@@ -721,7 +721,7 @@ for (i in 1:ncol(combs)){
             output15 <- TRUE
             refs15 <- TRUE
             cat("\n\n\\pagebreak\n")
-          }, error=function(e){cat(message(e))}) 
+          }, error=function(e){cat("")}) 
           
           
           # Cleanup for next pair
@@ -808,7 +808,7 @@ tryCatch({
     
     if (refs6==TRUE){
       # CI Spearman
-      cat("The confidence interval for the Spearman rank correlation coefficient was computed using the DescTools package [@spearmanrho] and the SpearmanRho function (based on the Fisher's Z transform). The hypothesis test for the Spearman rank correlation coefficient was computed with the cor.test function and the approximation by the Student t-distribution. The interpretation of the size of the estimated Spearman rank correlation coefficient relies on Cohen [@cohen]. The interpretation of the size of the Spearman correlation coefficient depends also on your context and purposes. Please consider additional literature from your field of operations to determine common effect sizes. ", fill=TRUE)
+      cat("The confidence interval for the Spearman rank correlation coefficient was computed using the DescTools package [@spearmanrho] and the SpearmanRho function (based on the Fisher's Z transformation). The hypothesis test for the Spearman rank correlation coefficient was computed with the cor.test function and the approximation by the Student t-distribution. The interpretation of the size of the estimated Spearman rank correlation coefficient relies on Cohen [@cohen]. The interpretation of the size of the Spearman correlation coefficient depends also on your context and purposes. Please consider additional literature from your field of operations to determine common effect sizes. ", fill=TRUE)
       cat("\\newline",fill=TRUE)
     }
     
@@ -867,7 +867,7 @@ tryCatch({
     }
       
   
-}, error=function(e) {cat(message(e))}
+}, error=function(e) {cat("")}
 
 )
 

@@ -275,7 +275,7 @@ interpret_sp <- function(rho, pvalue){
   
   if (pvalue>0.05) {
     cat("Interpretation: ")
-    cat("By using the Spearman rank correlation coefficient, we do not find a statistically significant monotonic relationship between the the variables.")
+    cat("By using the Spearman rank correlation coefficient, we do not find a statistically significant monotonic relationship between the variables.")
     cat("\\newline",fill=TRUE)
   } else {
     
