@@ -67,7 +67,7 @@ fluidPage(
   
   br(),
   
-  tags$div(a(img(src='Logo.jpg', width=150), href="https://www.statsomat.com", target="_blank")),
+  tags$div(a(img(src='Logo.jpg', width=200), href="https://www.statsomat.com", target="_blank")),
   
   h1("Correlation and Association", 
      style = "font-family: 'Source Sans Pro';
