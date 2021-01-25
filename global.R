@@ -1,5 +1,5 @@
-# 10 MB allowed in the full version 
-options(shiny.maxRequestSize = 10*1024^2)
+# 5 MB allowed 
+options(shiny.maxRequestSize = 5*1024^2)
 options(shiny.sanitize.errors = TRUE)
 
 library(shiny)

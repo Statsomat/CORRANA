@@ -8,7 +8,7 @@ output:
     toc: true
     toc_depth: 2
 bibliography: ["references.bib"]
-fontsize: 11pt
+fontsize: 9pt
 params:
   data: NA
   filename: NA
@@ -28,8 +28,11 @@ header-includes:
 ```{r child = 'report_kernel.Rmd'}
 ```
 
+```{r include=FALSE}
+if (exists("eval2")) ref_indic <- eval2 else ref_indic <- FALSE
+```
 
-```{r, results="asis", eval=eval2}
+```{r, results="asis", eval = ref_indic, echo=FALSE}
 cat("\n# References", fill=TRUE)
 ```
 

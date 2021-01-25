@@ -10,10 +10,12 @@ fluidPage(
     refreshColour = "black"
   ),
   
-  actionButton("reload", "Reload the app", onclick ="location.href='http://statsomat.shinyapps.io/correlations';", style="
-                                    color: black; 
-                                    background-color: #ff9900; 
+  # Reload button
+  actionButton("reload", "Reload the App", style="
+                                    color: black;
+                                    background-color: #ff9900;
                                     float: right"),
+  
   # Style notification 
   tags$head(
     tags$style(HTML("
@@ -73,7 +75,7 @@ fluidPage(
      background-color: #396e9f;
      padding: 20px;
      margin-bottom: 0px;"),
-  h2("Full Version", 
+  h2("Experimental Beta Version", 
      style = "font-family: 'Source Sans Pro';
      color: #fff; text-align: center;
      background-color: #2fa42d;
@@ -88,6 +90,7 @@ fluidPage(
       
       column(6, 
              
+             wellPanel(style = "background: #fff;", includeHTML("www/Description.html")),
              wellPanel(style = "background: #fff;", includeHTML("www/Instructions.html"))
              
       ),

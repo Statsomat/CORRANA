@@ -8,7 +8,7 @@ output:
     toc: true
     toc_depth: 2
 bibliography: ["references.bib"]
-fontsize: 11pt
+fontsize: 9pt
 params:
   data: NA
   filename: NA
@@ -121,3 +121,5 @@ cat(paste0("`df[ ,col_names] <- sapply(df[, col_names], function(col) iconv(col,
 
 ```{r child = 'report_code_common.Rmd', eval=eval2}
 ```
+
+

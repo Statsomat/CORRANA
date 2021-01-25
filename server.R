@@ -1,11 +1,14 @@
 function(input, output, session) {
   
-  
-  # Reload app 
+  # Reload app if disconnected
   observeEvent(input$disconnect, {
     session$close()
   })
   
+  # Reload app button
+  observeEvent(input$reload,session$reload())
+  
+  # On session end
   session$onSessionEnded(stopApp)
   
   # Upload message
@@ -178,16 +181,16 @@ function(input, output, session) {
       
     }
     
-    if (nrow(datainput()) > 100000){
-      showNotification("Error: Maximum 100000 rows allowed. ", duration=30)
+    if (nrow(datainput()) > 1000){
+      showNotification("Error: Maximum 1000 rows allowed. ", duration=30)
       Sys.sleep(5)
       session$reload()
     }
     
     
-    if (length(input$selection1$right) > 25 ){
+    if (length(input$selection1$right) > 10 ){
       
-      showNotification("Error: Please select less than 25 columns in an app call.", duration=30)
+      showNotification("Error: Maximum 10 columns allowed in an app call.", duration=30)
       Sys.sleep(5)
       session$reload()
       

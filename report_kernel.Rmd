@@ -190,7 +190,7 @@ check_reading <- function(col){
   
 col_names_missing <- sapply(df2, function(col) all(is.na(col)))
 df2[ ,col_names_missing] <- list(NULL)
-df_char2 <- df[which(sapply(df2, is.character) == 1L)]
+df_char2 <- df2[which(sapply(df2, is.character) == 1L)]
 numeric_percent <- sapply(df_char2, function(col) check_reading(col))
   
 if (length(numeric_percent[(numeric_percent>0.9)]) != 0L){
@@ -216,7 +216,7 @@ cat("Warning: The automatic statistical analysis and interpretation delivered by
 
 ```{r, results="asis", eval=eval}
 if (eval2==FALSE){
-  cat("**Final result: No pairs of suitable variables detected or sample size smaller than 7. END **", fill=TRUE)
+  cat("**Final result: No pairs of suitable variables detected (e.g. approximately continuous) or sample size smaller than 7. END **", fill=TRUE)
 }
 ```
 
