@@ -229,6 +229,8 @@ cat("(ordered alphabetically)", fill=TRUE)
 cat("\\newline ")
 ```
 
+\small
+
 ```{r include=FALSE, eval=eval2}
 
 # Setups
