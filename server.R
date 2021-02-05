@@ -153,6 +153,31 @@ function(input, output, session) {
   
   
   
+  # Row limits 
+  observe({
+    
+    req(input$file, datainput())
+    
+    removeModal()
+    
+    
+    if (nrow(datainput()) > 1000){
+      showNotification("Error: For more than 1000 rows contact support@statsomat.com. ", duration=30)
+      Sys.sleep(5)
+      session$close()
+    }
+    
+    if (nrow(datainput()) < 7){
+      showNotification("Error: Minimum 7 observations required. ", duration=30)
+      Sys.sleep(5)
+      session$close()
+    }
+    
+    
+  })
+  
+  
+  
   # Select Variables
   output$selection1 <- renderUI({
     
@@ -166,7 +191,7 @@ function(input, output, session) {
   })
   
   
-  # Stop if column names not distinct or if too many columns selected
+  # Other limits 
   observe({
     
     req(input$file, datainput())
@@ -177,42 +202,18 @@ function(input, output, session) {
       
       showNotification("Error: The columns names are not distinct. The session will be restarted. ", duration=30)
       Sys.sleep(5)
-      session$reload()
+      session$close()
       
-    }
-    
-    if (nrow(datainput()) > 1000){
-      showNotification("Error: Maximum 1000 rows allowed. ", duration=30)
-      Sys.sleep(5)
-      session$reload()
     }
     
     
     if (length(input$selection1$right) > 10 ){
       
-      showNotification("Error: Maximum 10 columns allowed in an app call.", duration=30)
+      showNotification("Error: For more than 10 columns contact support@statsomat.com. ", duration=30)
       Sys.sleep(5)
-      session$reload()
+      session$close()
       
     }
-    
-    
-    if (nrow(datainput()) > 5000 && nrow(datainput()) < 10000 && length(input$selection1$right) > 5){
-      
-      showNotification("Warning: Large sample size, out of memory possible. Please select a maximum of 5 columns in an app call. ", duration=30)
-      Sys.sleep(5)
-      session$reload()
-      
-    }
-    
-    if (nrow(datainput()) >=10000 && length(input$selection1$right) > 3){
-      
-      showNotification("Warning: Large sample size, out of memory possible. Please select a maximum of 3 columns in an app call. ", duration=30)
-      Sys.sleep(5)
-      session$reload()
-      
-    }
-    
     
   })
   

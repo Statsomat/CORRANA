@@ -1,7 +1,8 @@
-fluidPage(
+# Define UI for application 
+shinyUI(fluidPage(
   
   disconnectMessage(
-    text = "Error or your session timed out. ",
+    text = "Your session timed out or error. ",
     refresh = "Reload now",
     background = "#ff9900",
     colour = "white",
@@ -70,13 +71,13 @@ fluidPage(
   tags$div(a(img(src='Logo.jpg', width=200), href="https://www.statsomat.com", target="_blank")),
   
   h1("Correlation and Association", 
-     style = "font-family: 'Source Sans Pro';
+     style = "font-family: 'Helvetica';
      color: #fff; text-align: center;
      background-color: #396e9f;
      padding: 20px;
      margin-bottom: 0px;"),
-  h2("Experimental Beta Version", 
-     style = "font-family: 'Source Sans Pro';
+  h5("Experimental Beta Version", 
+     style = "font-family: 'Helvetica';
      color: #fff; text-align: center;
      background-color: #2fa42d;
      padding: 5px;
@@ -87,15 +88,8 @@ fluidPage(
   
   fluidRow( 
               
-      
-      column(6, 
-             
-             wellPanel(style = "background: #fff;", includeHTML("www/Description.html")),
-             wellPanel(style = "background: #fff;", includeHTML("www/Instructions.html"))
-             
-      ),
                  
-      column(6,  
+      column(5, offset=1,  
              
              
              wellPanel(style = "background: #adc7de;", 
@@ -136,14 +130,12 @@ fluidPage(
             
             wellPanel(style = "background: #adc7de;", 
                       
-                      h3("Select Variables"),
+                      h3("Select Variables (max 10)"),
                       
                       uiOutput("selection1")
                     
-            )
-      )),            
-            
-fluidRow(column(12, 
+            ), 
+
             
             wellPanel(style = "background: #ff9900", align="center", 
                       
@@ -165,9 +157,7 @@ fluidRow(column(12,
                                     box-shadow: none !important;")
                       
                       
-            ))),
-
-fluidRow(column(12, 
+            ), 
             
             wellPanel(style = "background: #ff9900", align="center", 
                       
@@ -185,36 +175,28 @@ fluidRow(column(12,
                                     background-image: url('Button.gif');") 
                       
                       
-        ))), 
-
-  fluidRow(
+            )
+            
+  ), # end column 
     
-    column(6, 
+    column(5, 
            
+           wellPanel(style = "background: #fff;", includeHTML("www/Description.html")),
+           wellPanel(style = "background: #fff;", includeHTML("www/Instructions.html")),
            wellPanel(style = "background: #fff;", includeHTML("www/Secure.html")), 
-           wellPanel(style = "background: #fff;", includeHTML("www/Other.html"))
-           
-    ),
-    
-    column(6, 
-           
+           wellPanel(style = "background: #fff;", includeHTML("www/OpenSource.html")), 
+           wellPanel(style = "background: #fff;", includeHTML("www/Other.html")), 
            wellPanel(style = "background: #fff;", includeHTML("www/Also.html")),
-           wellPanel(style = "background: #fff;", includeHTML("www/OpenSource.html"))
-           
-    )
-    
-  ),
-  
-  fluidRow( 
-    
-    column(12, 
-           
            wellPanel(style = "background: #fff;", includeHTML("www/Contact.html"))
            
-    )),
-  
- includeHTML("www/Footer.html"),
- 
- hr()
- 
-)
+    ), # column 
+    
+    column(1,)
+    
+  ), # fluidrow
+
+includeHTML("www/Footer.html"),
+
+hr()
+
+))
